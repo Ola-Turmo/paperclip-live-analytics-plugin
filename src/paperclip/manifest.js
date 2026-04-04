@@ -16,6 +16,7 @@ const manifest = {
     'projects.read',
     'ui.page.register',
     'ui.dashboardWidget.register',
+    'ui.sidebar.register',
     'instance.settings.register',
   ],
   entrypoints: {
@@ -36,6 +37,12 @@ const manifest = {
         id: 'agent-analytics-live-widget',
         displayName: 'Agent Analytics Live',
         exportName: 'LiveDashboardWidget',
+      },
+      {
+        type: 'sidebar',
+        id: 'agent-analytics-live-sidebar',
+        displayName: 'Analytics',
+        exportName: 'LiveSidebarLink',
       },
       {
         type: 'settingsPage',

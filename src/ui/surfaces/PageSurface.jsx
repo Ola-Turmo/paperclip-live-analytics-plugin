@@ -1,3 +1,5 @@
+import { CountryMapPanel } from '../components/CountryMapPanel.jsx';
+
 function formatRelativeTime(timestamp) {
   if (!timestamp) return 'No updates yet';
   const seconds = Math.max(0, Math.round((Date.now() - timestamp) / 1000));
@@ -19,14 +21,11 @@ function CountryPulse({ liveState }) {
         <div className="aa-world-hot">{hotCountry}</div>
       </div>
       <div className="aa-world-grid">
-        <div className="aa-globe">
-          <div className="aa-globe-ring aa-globe-ring-one" />
-          <div className="aa-globe-ring aa-globe-ring-two" />
-          <div className="aa-globe-ring aa-globe-ring-three" />
-          <div className="aa-globe-core">
-            <span>Live</span>
-          </div>
-        </div>
+        <CountryMapPanel
+          countries={liveState.world.countries}
+          hotCountryCode={liveState.world.hotCountry}
+          updatedAt={formatRelativeTime(liveState.generatedAt)}
+        />
         <div className="aa-country-list">
           {liveState.world.countries.map((country) => (
             <div className="aa-country-row" key={country.country}>
