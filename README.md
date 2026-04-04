@@ -6,6 +6,19 @@ Setup guide:
 
 [Install and set up Agent Analytics for Paperclip](https://docs.agentanalytics.sh/guides/paperclip/)
 
+## Quick install in Paperclip UI
+
+1. In Paperclip, open `Settings` -> `Plugins`.
+2. Click `Install Plugin`.
+3. Paste this npm package name:
+
+```text
+@agent-analytics/paperclip-live-analytics-plugin
+```
+
+4. Click `Install`.
+5. Open the plugin `Configure` page and connect your Agent Analytics account.
+
 ## Screenshot
 
 ![Agent Analytics Live widget inside the Paperclip dashboard](./src/ui/assets/aa-in-dashboard.jpg)
