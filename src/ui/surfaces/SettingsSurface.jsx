@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { BrandMark } from '../components/BrandMark.jsx';
+import { trackPluginCta, trackPluginFeature } from '../analytics.js';
 
 function normalizeOrigins(value) {
   if (Array.isArray(value)) return value.filter(Boolean).join(', ');
@@ -71,6 +72,7 @@ export function SettingsSurface({
   const isWaitingForApproval = isStartingAuth || isPending;
 
   async function handleStartLogin() {
+    trackPluginCta('login_started');
     setIsStartingAuth(true);
     if (typeof window !== 'undefined') {
       popupRef.current = window.open('', '_blank');
@@ -116,7 +118,15 @@ export function SettingsSurface({
                   <strong>Connected account</strong>
                   <span>{settingsData.auth.accountSummary?.email || 'Connected'}</span>
                 </div>
-                <button className="aa-button aa-button-danger" onClick={onDisconnect}>Disconnect</button>
+                <button
+                  className="aa-button aa-button-danger"
+                  onClick={() => {
+                    trackPluginFeature('disconnect_clicked');
+                    onDisconnect();
+                  }}
+                >
+                  Disconnect
+                </button>
               </div>
             </div>
 
@@ -147,7 +157,13 @@ export function SettingsSurface({
               <div className="aa-settings-login-card">
                 <div className="aa-spinner" aria-hidden="true" />
                 <p className="aa-settings-login-message aa-settings-pending-message">Waiting for browser approval…</p>
-                <button className="aa-button aa-button-ghost aa-button-hero" onClick={onDisconnect}>
+                <button
+                  className="aa-button aa-button-ghost aa-button-hero"
+                  onClick={() => {
+                    trackPluginFeature('login_canceled');
+                    onDisconnect();
+                  }}
+                >
                   Cancel
                 </button>
               </div>
@@ -196,6 +212,7 @@ export function SettingsSurface({
                   <button
                     className={`aa-button ${isSelected ? 'aa-button-secondary' : 'aa-button-light'}`}
                     onClick={async () => {
+                      trackPluginFeature('project_selected', { project_name: project.name });
                       const nextState = {
                         ...formState,
                         selectedProjectId: project.id || '',
@@ -274,10 +291,26 @@ export function SettingsSurface({
               </div>
 
               <div className="aa-inline-actions">
-                <button className="aa-button aa-button-primary" onClick={() => onSaveSettings(formState)}>
+                <button
+                  className="aa-button aa-button-primary"
+                  onClick={() => {
+                    trackPluginFeature('advanced_settings_saved', {
+                      plugin_enabled: formState.pluginEnabled,
+                      live_window_seconds: formState.liveWindowSeconds,
+                      poll_interval_seconds: formState.pollIntervalSeconds,
+                    });
+                    onSaveSettings(formState);
+                  }}
+                >
                   Save advanced settings
                 </button>
-                <button className="aa-button aa-button-ghost" onClick={onReconnect}>
+                <button
+                  className="aa-button aa-button-ghost"
+                  onClick={() => {
+                    trackPluginFeature('connection_revalidated');
+                    onReconnect();
+                  }}
+                >
                   Revalidate connection
                 </button>
               </div>

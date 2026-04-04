@@ -1,5 +1,6 @@
 import { CountryMapPanel } from '../components/CountryMapPanel.jsx';
 import { BrandMark } from '../components/BrandMark.jsx';
+import { trackPluginCta, trackPluginFeature } from '../analytics.js';
 
 function CogIcon() {
   return (
@@ -136,7 +137,16 @@ function AssetCard({ asset, onSnooze }) {
       </div>
 
       <div className="aa-asset-actions">
-        <button className="aa-button aa-button-ghost" onClick={() => onSnooze(asset.assetKey)}>
+        <button
+          className="aa-button aa-button-ghost"
+          onClick={() => {
+            trackPluginFeature('asset_snoozed', {
+              asset_key: asset.assetKey,
+              project_name: asset.agentAnalyticsProject || asset.label,
+            });
+            onSnooze(asset.assetKey);
+          }}
+        >
           Snooze 30m
         </button>
       </div>
@@ -154,7 +164,13 @@ function EmptyProjectState({ accountLabel, setupHref }) {
         Open plugin setup, choose the project, and the live map will start populating.
       </p>
       <div className="aa-empty-actions">
-        <a className="aa-button aa-button-primary" href={setupHref}>Open plugin setup</a>
+        <a
+          className="aa-button aa-button-primary"
+          href={setupHref}
+          onClick={() => trackPluginCta('open_plugin_setup_empty_state')}
+        >
+          Open plugin setup
+        </a>
       </div>
     </section>
   );
@@ -185,7 +201,11 @@ export function PageSurface({ liveState, onSnooze, setupHref = '/instance/settin
         <div className="aa-live-header-status">
           <div className="aa-live-header-actions">
             <span className={`aa-status-pill aa-status-${liveState.connection.status}`}>{liveState.connection.label}</span>
-            <a className="aa-button aa-button-ghost aa-button-icon-link" href={setupHref}>
+            <a
+              className="aa-button aa-button-ghost aa-button-icon-link"
+              href={setupHref}
+              onClick={() => trackPluginCta('open_plugin_setup_header')}
+            >
               <CogIcon />
               <span>Plugin setup</span>
             </a>

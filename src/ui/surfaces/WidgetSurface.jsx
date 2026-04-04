@@ -1,4 +1,5 @@
 import { BrandMark } from '../components/BrandMark.jsx';
+import { trackPluginCta } from '../analytics.js';
 
 export function WidgetSurface({ widget, fullPageHref = '?surface=page' }) {
   return (
@@ -31,7 +32,13 @@ export function WidgetSurface({ widget, fullPageHref = '?surface=page' }) {
       </div>
 
       <div className="aa-widget-footer">
-        <a className="aa-button aa-button-secondary" href={fullPageHref}>Open full live page</a>
+        <a
+          className="aa-button aa-button-secondary"
+          href={fullPageHref}
+          onClick={() => trackPluginCta('open_full_live_page_widget')}
+        >
+          Open full live page
+        </a>
       </div>
     </section>
   );

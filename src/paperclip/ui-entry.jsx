@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useHostContext, usePluginAction, usePluginData, usePluginToast } from '@paperclipai/plugin-sdk/ui';
 import { ACTION_KEYS, DATA_KEYS, PLUGIN_PAGE_ROUTE } from '../shared/constants.js';
+import { trackPluginCta, trackPluginFeature, trackPluginImpression } from '../ui/analytics.js';
 import { BrandMark } from '../ui/components/BrandMark.jsx';
 import { PageSurface } from '../ui/surfaces/PageSurface.jsx';
 import { SettingsSurface } from '../ui/surfaces/SettingsSurface.jsx';
@@ -72,6 +73,12 @@ function PageInner({ context }) {
   const unsnoozeAsset = usePluginAction(ACTION_KEYS.assetUnsnooze);
   useAutoRefresh(refresh, 5000);
 
+  useEffect(() => {
+    trackPluginImpression('live_page_viewed', {
+      company_id: companyId,
+    });
+  }, [companyId]);
+
   const content = useMemo(() => data, [data]);
 
   if (loading && !content) return React.createElement('div', { className: 'aa-panel' }, 'Loading live data…');
@@ -100,6 +107,12 @@ function WidgetInner({ context }) {
   useAutoRefresh(refresh, 5000);
   const content = data;
 
+  useEffect(() => {
+    trackPluginImpression('dashboard_widget_viewed', {
+      company_id: companyId,
+    });
+  }, [companyId]);
+
   if (loading && !content) return React.createElement('div', { className: 'aa-widget' }, 'Loading…');
   if (error && !content) return React.createElement('div', { className: 'aa-widget' }, `Widget failed: ${error.message}`);
   if (!content) return React.createElement('div', { className: 'aa-widget' }, 'No live summary yet.');
@@ -125,6 +138,7 @@ function SidebarInner({ context }) {
       href,
       'aria-current': isActive ? 'page' : undefined,
       className: `aa-sidebar-link${isActive ? ' aa-sidebar-link-active' : ''}`,
+      onClick: () => trackPluginCta('sidebar_open_live_page'),
     },
     React.createElement(
       'span',
@@ -155,6 +169,12 @@ function SettingsInner({ context }) {
   const [callbackState, setCallbackState] = useState(null);
 
   useEffect(() => {
+    trackPluginImpression('settings_page_viewed', {
+      company_id: companyId,
+    });
+  }, [companyId]);
+
+  useEffect(() => {
     if (typeof window === 'undefined') return undefined;
     const handler = (event) => {
       if (event?.origin !== window.location.origin) return;
@@ -170,6 +190,7 @@ function SettingsInner({ context }) {
               authRequestId: event.data.requestId,
               exchangeCode: event.data.exchangeCode,
             });
+            trackPluginFeature('login_completed', { company_id: companyId });
             toast({ title: 'Agent Analytics connected', tone: 'success' });
             refresh();
           } catch (completionError) {
@@ -186,6 +207,7 @@ function SettingsInner({ context }) {
       }
 
       if (event?.data?.type === 'agent-analytics-auth-complete') {
+        trackPluginFeature('login_completed', { company_id: companyId });
         toast({ title: 'Agent Analytics connected', tone: 'success' });
         refresh();
       }
@@ -219,6 +241,7 @@ function SettingsInner({ context }) {
           setCallbackState('connected');
         } else {
           await authComplete({ companyId, authRequestId: requestId, exchangeCode });
+          trackPluginFeature('login_completed', { company_id: companyId });
           setCallbackState('connected');
         }
         url.searchParams.delete('request_id');
@@ -264,6 +287,7 @@ function SettingsInner({ context }) {
     },
     onDisconnect: async () => {
       await authDisconnect({ companyId });
+      trackPluginFeature('disconnect_completed', { company_id: companyId });
       refresh();
     },
     onSaveSettings: async (settings) => {
