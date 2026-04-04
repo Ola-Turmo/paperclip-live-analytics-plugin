@@ -31,7 +31,7 @@ await build({
   jsx: 'automatic',
   loader: {
     '.css': 'text',
+    '.png': 'dataurl',
   },
   external: ['react', 'react/jsx-runtime', '@paperclipai/plugin-sdk/ui'],
 });
-

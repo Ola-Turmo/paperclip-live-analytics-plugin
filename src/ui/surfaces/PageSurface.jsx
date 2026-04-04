@@ -1,5 +1,20 @@
 import { CountryMapPanel } from '../components/CountryMapPanel.jsx';
-import { AGENT_ANALYTICS_WIDGET_LOGO } from './WidgetSurface.jsx';
+import { BrandMark } from '../components/BrandMark.jsx';
+
+function CogIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" className="aa-button-icon">
+      <path
+        d="M10.3 2.9h3.4l.5 2.1c.6.2 1.1.4 1.6.7l1.9-1.1 2.4 2.4-1.1 1.9c.3.5.5 1 .7 1.6l2.1.5v3.4l-2.1.5c-.2.6-.4 1.1-.7 1.6l1.1 1.9-2.4 2.4-1.9-1.1c-.5.3-1 .5-1.6.7l-.5 2.1h-3.4l-.5-2.1c-.6-.2-1.1-.4-1.6-.7l-1.9 1.1-2.4-2.4 1.1-1.9c-.3-.5-.5-1-.7-1.6l-2.1-.5V10.3l2.1-.5c.2-.6.4-1.1.7-1.6L4.6 6.3l2.4-2.4 1.9 1.1c.5-.3 1-.5 1.6-.7zm1.7 5.1a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
 
 function formatRelativeTime(timestamp) {
   if (!timestamp) return 'No updates yet';
@@ -11,15 +26,12 @@ function formatRelativeTime(timestamp) {
 }
 
 function CountryPulse({ liveState }) {
-  const hotCountry = liveState.world.hotCountry || 'World';
   return (
     <section className="aa-panel aa-world-panel">
       <div className="aa-panel-header">
         <div>
           <p className="aa-kicker">World / Country View</p>
-          <h2>Supporting geography, not dashboard wallpaper.</h2>
         </div>
-        <div className="aa-world-hot">{hotCountry}</div>
       </div>
       <div className="aa-world-grid">
         <CountryMapPanel
@@ -27,22 +39,6 @@ function CountryPulse({ liveState }) {
           hotCountryCode={liveState.world.hotCountry}
           updatedAt={formatRelativeTime(liveState.generatedAt)}
         />
-        <div className="aa-country-list">
-          {liveState.world.countries.map((country) => (
-            <div className="aa-country-row" key={country.country}>
-              <div>
-                <strong>{country.country}</strong>
-                <span>{country.visitors} visitors</span>
-              </div>
-              <div className="aa-country-bar">
-                <div
-                  className="aa-country-bar-fill"
-                  style={{ width: `${Math.min(100, (country.events / Math.max(1, liveState.metrics.eventsPerMinute)) * 100)}%` }}
-                />
-              </div>
-            </div>
-          ))}
-        </div>
       </div>
     </section>
   );
@@ -53,8 +49,7 @@ function EvidenceColumn({ liveState }) {
     <section className="aa-panel">
       <div className="aa-panel-header">
         <div>
-          <p className="aa-kicker">Operator Evidence</p>
-          <h2>Fast feed, top pages, and why the pulse changed.</h2>
+          <p className="aa-kicker">Live Signals</p>
         </div>
       </div>
       <div className="aa-evidence-grid">
@@ -97,7 +92,7 @@ function AssetCard({ asset, onSnooze }) {
     <article className={`aa-asset-card aa-asset-card-${asset.kind}`}>
       <div className="aa-asset-topline">
         <div>
-          <p className="aa-kicker">{asset.kind}</p>
+          <p className="aa-kicker">Project Snapshot</p>
           <h3>{asset.label}</h3>
         </div>
         <span className={`aa-status-pill aa-status-${asset.status}`}>{asset.status}</span>
@@ -120,10 +115,6 @@ function AssetCard({ asset, onSnooze }) {
 
       <div className="aa-asset-details">
         <div>
-          <span className="aa-label">Project</span>
-          <strong>{asset.agentAnalyticsProject}</strong>
-        </div>
-        <div>
           <span className="aa-label">Hot country</span>
           <strong>{asset.lastHotCountry || 'Waiting for stream'}</strong>
         </div>
@@ -145,7 +136,6 @@ function AssetCard({ asset, onSnooze }) {
       </div>
 
       <div className="aa-asset-actions">
-        <span className="aa-muted-note">One Paperclip company, one live Agent Analytics project.</span>
         <button className="aa-button aa-button-ghost" onClick={() => onSnooze(asset.assetKey)}>
           Snooze 30m
         </button>
@@ -154,32 +144,65 @@ function AssetCard({ asset, onSnooze }) {
   );
 }
 
-export function PageSurface({ liveState, onSnooze }) {
+function EmptyProjectState({ accountLabel, setupHref }) {
+  return (
+    <section className="aa-panel aa-empty-state">
+      <p className="aa-kicker">Live feed not configured</p>
+      <h2>Select one Agent Analytics project to start the live map.</h2>
+      <p className="aa-empty-copy">
+        This Paperclip company is connected as <strong>{accountLabel}</strong>, but it does not have a live project selected yet.
+        Open plugin setup, choose the project, and the live map will start populating.
+      </p>
+      <div className="aa-empty-actions">
+        <a className="aa-button aa-button-primary" href={setupHref}>Open plugin setup</a>
+      </div>
+    </section>
+  );
+}
+
+export function PageSurface({ liveState, onSnooze, setupHref = '/instance/settings/plugins' }) {
   const primaryAsset = liveState.assets[0] || null;
-  const projectName = primaryAsset?.agentAnalyticsProject || primaryAsset?.label || 'Agent Analytics';
-  const title = `${projectName} live map`;
   const accountLabel = liveState.account?.email || 'No connected account';
+  const needsProjectSelection =
+    liveState.connection.status === 'live' &&
+    liveState.assets.length === 0 &&
+    String(liveState.connection.detail || '').includes('Select one Agent Analytics project');
+  const projectName = needsProjectSelection
+    ? 'No project selected'
+    : (primaryAsset?.agentAnalyticsProject || primaryAsset?.label || 'Agent Analytics');
 
   return (
     <div className="aa-page-shell">
       <header className="aa-live-header">
         <div className="aa-live-header-main">
-          <img className="aa-live-header-logo" src={AGENT_ANALYTICS_WIDGET_LOGO} alt="Agent Analytics" />
+          <BrandMark className="aa-live-header-logo" alt="" />
           <div>
             <p className="aa-kicker">Agent Analytics</p>
-            <h1>{title}</h1>
-            <p className="aa-live-header-copy">Country-level real-time traffic for one Agent Analytics project at a time.</p>
+            <h1>{projectName}</h1>
+            <p className="aa-live-header-copy">Live map</p>
           </div>
         </div>
         <div className="aa-live-header-status">
-          <span className={`aa-status-pill aa-status-${liveState.connection.status}`}>{liveState.connection.label}</span>
-          <div className="aa-live-header-meta">
-            <span>{accountLabel}</span>
-            <span>{liveState.connection.detail}</span>
+          <div className="aa-live-header-actions">
+            <span className={`aa-status-pill aa-status-${liveState.connection.status}`}>{liveState.connection.label}</span>
+            <a className="aa-button aa-button-ghost aa-button-icon-link" href={setupHref}>
+              <CogIcon />
+              <span>Plugin setup</span>
+            </a>
           </div>
+          <dl className="aa-live-header-meta">
+            <div className="aa-live-header-meta-row">
+              <dt>Agent Analytics account</dt>
+              <dd>{accountLabel}</dd>
+            </div>
+          </dl>
         </div>
       </header>
 
+      {needsProjectSelection ? (
+        <EmptyProjectState accountLabel={accountLabel} setupHref={setupHref} />
+      ) : (
+        <>
       <section className="aa-metric-grid">
         <div className="aa-metric-card">
           <span>Active visitors</span>
@@ -205,18 +228,14 @@ export function PageSurface({ liveState, onSnooze }) {
       </div>
 
       <section className="aa-assets-section">
-        <div className="aa-panel-header">
-          <div>
-            <p className="aa-kicker">Selected Project</p>
-            <h2>One company-scoped Agent Analytics project feeds the live monitor.</h2>
-          </div>
-        </div>
         <div className="aa-asset-grid">
           {liveState.assets.map((asset) => (
             <AssetCard key={asset.assetKey} asset={asset} onSnooze={onSnooze} />
           ))}
         </div>
       </section>
+        </>
+      )}
     </div>
   );
 }

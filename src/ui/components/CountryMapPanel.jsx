@@ -137,19 +137,22 @@ export function CountryMapPanel({ countries, hotCountryCode, updatedAt }) {
     });
   }, [focus, items, mapFailed]);
 
-  if (countries.length === 0) {
-    return <FallbackCountrySummary countries={countries} message="No country activity in the current live window yet." />;
-  }
-
   if (mapFailed) {
     return <FallbackCountrySummary countries={countries} message="Map tiles did not load. Showing the country summary instead." />;
   }
 
   return (
     <div className="aa-map-panel">
-      <div ref={containerRef} className="aa-leaflet-map" />
+      <div className="aa-map-frame">
+        <div ref={containerRef} className="aa-leaflet-map" />
+        {items.length === 0 ? (
+          <div className="aa-map-empty-overlay">
+            <strong>No country activity in the current live window yet.</strong>
+            <span>The map stays live and will zoom into the first active country when traffic appears.</span>
+          </div>
+        ) : null}
+      </div>
       <div className="aa-map-footer">
-        <span>{items.length} mapped countries</span>
         <span>{updatedAt}</span>
       </div>
     </div>
