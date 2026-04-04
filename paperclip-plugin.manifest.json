@@ -1,12 +1,12 @@
 {
-  "id": "@agent-analytics/paperclip-live-analytics-plugin",
+  "id": "agent-analytics.paperclip-live-analytics-plugin",
   "name": "Agent Analytics Live",
   "displayName": "Agent Analytics Live",
-  "version": "0.1.0",
-  "categories": ["connector", "ui", "Analytics"],
+  "version": "0.1.1",
+  "categories": ["connector", "ui"],
   "entrypoints": {
-    "worker": "./src/worker/index.js",
-    "ui": "./dist"
+    "worker": "./dist/worker.js",
+    "ui": "./dist/ui"
   },
   "surfaces": [
     {
@@ -20,6 +20,11 @@
       "title": "Agent Analytics Live"
     },
     {
+      "type": "sidebar",
+      "key": "agentAnalyticsLiveSidebar",
+      "title": "Analytics"
+    },
+    {
       "type": "settingsPage",
       "key": "agentAnalyticsLiveSettings",
       "title": "Agent Analytics Live Settings"
@@ -30,7 +35,10 @@
     "plugin.state.read",
     "plugin.state.write",
     "companies.read",
-    "projects.read"
+    "projects.read",
+    "ui.page.register",
+    "ui.dashboardWidget.register",
+    "ui.sidebar.register",
+    "instance.settings.register"
   ]
 }
-

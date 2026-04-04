@@ -7,7 +7,7 @@ const manifest = {
   displayName: 'Agent Analytics Live',
   description: 'Thin live monitor for Paperclip companies using Agent Analytics.',
   author: '@agent-analytics',
-  categories: ['analytics', 'growth'],
+  categories: ['connector', 'ui'],
   capabilities: [
     'http.outbound',
     'plugin.state.read',

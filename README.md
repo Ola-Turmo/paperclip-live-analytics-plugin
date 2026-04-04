@@ -12,6 +12,7 @@ npx paperclipai plugin install @agent-analytics/paperclip-live-analytics-plugin
 
 - `page`: company-level live operator view
 - `dashboardWidget`: compact live summary
+- `sidebar`: left-nav entry that opens the live page
 - `settingsPage`: login-first auth, explicit asset mapping, rollout controls
 - Worker-owned Agent Analytics auth, `/live` polling, `/stream` SSE fan-out, and company-scoped live cache
 

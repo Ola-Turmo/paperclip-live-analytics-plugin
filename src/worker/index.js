@@ -10,7 +10,7 @@ export const manifest = {
   },
   data: DATA_KEYS,
   actions: ACTION_KEYS,
-  surfaces: ['page', 'dashboardWidget', 'settingsPage'],
+  surfaces: ['page', 'dashboardWidget', 'sidebar', 'settingsPage'],
 };
 
 export async function setup(ctx) {

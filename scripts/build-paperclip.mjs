@@ -11,7 +11,7 @@ const shared = {
 await build({
   ...shared,
   entryPoints: ['src/paperclip/manifest.js'],
-  outfile: 'dist/manifest.js',
+  outfile: 'dist/plugin-manifest.js',
   platform: 'neutral',
 });
 

@@ -38,7 +38,7 @@
     "reinstall:local": "bash ./scripts/reinstall-paperclip-local.sh"
   },
   "paperclipPlugin": {
-    "manifest": "./dist/manifest.js",
+    "manifest": "./dist/plugin-manifest.js",
     "worker": "./dist/worker.js",
     "ui": "./dist/ui/"
   },

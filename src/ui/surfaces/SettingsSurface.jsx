@@ -15,6 +15,7 @@ export function SettingsSurface({
 }) {
   const popupRef = useRef(null);
   const pendingPopupLaunchRef = useRef(false);
+  const [isStartingAuth, setIsStartingAuth] = useState(false);
   const [formState, setFormState] = useState(() => ({
     agentAnalyticsBaseUrl: settingsData.settings.agentAnalyticsBaseUrl,
     liveWindowSeconds: settingsData.settings.liveWindowSeconds,
@@ -59,9 +60,18 @@ export function SettingsSurface({
     window.open(authorizeUrl, '_blank');
   }, [settingsData.auth.pendingAuthRequest?.authorizeUrl]);
 
-  const showConnectedConfiguration = settingsData.auth.connected || settingsData.auth.pendingAuthRequest;
+  useEffect(() => {
+    if (settingsData.auth.connected || settingsData.auth.pendingAuthRequest) {
+      setIsStartingAuth(false);
+    }
+  }, [settingsData.auth.connected, settingsData.auth.pendingAuthRequest]);
+
+  const isConnected = Boolean(settingsData.auth.connected);
+  const isPending = Boolean(settingsData.auth.pendingAuthRequest);
+  const isWaitingForApproval = isStartingAuth || isPending;
 
   async function handleStartLogin() {
+    setIsStartingAuth(true);
     if (typeof window !== 'undefined') {
       popupRef.current = window.open('', '_blank');
       pendingPopupLaunchRef.current = true;
@@ -79,6 +89,7 @@ export function SettingsSurface({
         }
       }
     } catch (error) {
+      setIsStartingAuth(false);
       pendingPopupLaunchRef.current = false;
       const popup = popupRef.current;
       if (popup && !popup.closed) popup.close();
@@ -88,8 +99,8 @@ export function SettingsSurface({
 
   return (
     <div className="aa-settings-shell">
-      <section className={`aa-panel${showConnectedConfiguration ? '' : ' aa-settings-login-shell'}`}>
-        {showConnectedConfiguration ? (
+      <section className={`aa-panel${isConnected ? '' : ' aa-settings-login-shell'}`}>
+        {isConnected ? (
           <>
             <div className="aa-panel-header">
               <div>
@@ -103,28 +114,10 @@ export function SettingsSurface({
               <div className="aa-settings-row">
                 <div>
                   <strong>Connected account</strong>
-                  <span>
-                    {settingsData.auth.connected
-                      ? settingsData.auth.accountSummary?.email || 'Connected'
-                      : 'Pending browser approval'}
-                  </span>
+                  <span>{settingsData.auth.accountSummary?.email || 'Connected'}</span>
                 </div>
                 <button className="aa-button aa-button-danger" onClick={onDisconnect}>Disconnect</button>
               </div>
-
-              {settingsData.auth.pendingAuthRequest ? (
-                <div className="aa-auth-box">
-                  <p>Approve the Agent Analytics login in the browser. The approval tab should return here and close when it finishes.</p>
-                  <a href={settingsData.auth.pendingAuthRequest.authorizeUrl} target="_blank" rel="noreferrer">
-                    Open approval page
-                  </a>
-                  <p className="aa-muted-note">{settingsData.auth.pendingAuthRequest.authorizeUrl}</p>
-                  <p className="aa-muted-note">If the browser does not close cleanly, use Check approval once.</p>
-                  <div className="aa-inline-actions">
-                    <button className="aa-button aa-button-ghost" onClick={onReconnect}>Check approval</button>
-                  </div>
-                </div>
-              ) : null}
             </div>
 
             <div className="aa-mini-panel">
@@ -138,7 +131,27 @@ export function SettingsSurface({
                 <strong>{formState.selectedProjectName || 'None yet'}</strong>
               </div>
             </div>
-          </div>
+            </div>
+          </>
+        ) : isWaitingForApproval ? (
+          <>
+            <div className="aa-settings-login-status">
+              <span className={`aa-status-pill aa-status-${settingsData.auth.status}`}>{settingsData.auth.status}</span>
+            </div>
+            <div className="aa-settings-empty-auth aa-settings-pending-auth">
+              <BrandMark className="aa-settings-login-logo" alt="" />
+              <div className="aa-settings-empty-auth-copy">
+                <strong>Waiting for approval</strong>
+                <span>Finish the Agent Analytics login in the browser. This screen will update as soon as the approval completes.</span>
+              </div>
+              <div className="aa-settings-login-card">
+                <div className="aa-spinner" aria-hidden="true" />
+                <p className="aa-settings-login-message aa-settings-pending-message">Waiting for browser approval…</p>
+                <button className="aa-button aa-button-ghost aa-button-hero" onClick={onDisconnect}>
+                  Cancel
+                </button>
+              </div>
+            </div>
           </>
         ) : (
           <>
@@ -162,7 +175,7 @@ export function SettingsSurface({
         )}
       </section>
 
-      {showConnectedConfiguration ? (
+      {isConnected ? (
         <section className="aa-panel">
           <div className="aa-panel-header">
             <div>
@@ -219,7 +232,7 @@ export function SettingsSurface({
         </section>
       ) : null}
 
-      {showConnectedConfiguration ? (
+      {isConnected ? (
         <section className="aa-panel">
           <details>
             <summary className="aa-kicker" style={{ cursor: 'pointer', userSelect: 'none' }}>
