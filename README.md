@@ -2,11 +2,22 @@
 
 Thin live-monitor plugin for Paperclip companies that want Agent Analytics signals where operators already work.
 
+## Requirements
+
+- An Agent Analytics account
+- A Paperclip instance with plugin support
+
+Create or access your Agent Analytics account at:
+
+`https://agentanalytics.sh`
+
 ## Install
 
 ```bash
 npx paperclipai plugin install @agent-analytics/paperclip-live-analytics-plugin
 ```
+
+After install, connect the plugin to your Agent Analytics account from the plugin settings page.
 
 ## What ships in v1
 
