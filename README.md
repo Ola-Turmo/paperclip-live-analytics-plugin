@@ -1,23 +1,26 @@
 # Agent Analytics Live for Paperclip
 
-Thin live-monitor plugin for Paperclip companies that want Agent Analytics signals where operators already work.
+Live Agent Analytics inside a Paperclip company workspace.
+
+The plugin adds a live page, dashboard widget, sidebar entry, and settings page so operators can see current traffic without leaving Paperclip.
 
 Setup guide:
 
 [Install and set up Agent Analytics for Paperclip](https://docs.agentanalytics.sh/guides/paperclip/)
 
-## Install live map analytics plugin in Paperclip UI
+## Install in Paperclip
 
 1. In Paperclip, open `Settings` -> `Plugins`.
 2. Click `Install Plugin`.
-3. Paste this npm package name:
+3. Install this package:
 
 ```text
 @agent-analytics/paperclip-live-analytics-plugin
 ```
 
-4. Click `Install`.
-5. Open the plugin `Configure` page and connect your Agent Analytics account.
+4. Open the plugin `Configure` page.
+5. Connect your Agent Analytics account in the browser.
+6. Select one Agent Analytics project for the current Paperclip company.
 
 ## Screenshot
 
@@ -25,38 +28,28 @@ Setup guide:
 
 ## Requirements
 
-- An Agent Analytics account
+- An Agent Analytics account with live-read access
 - A Paperclip instance with plugin support
 
-Create or access your Agent Analytics account at:
+Create or access your Agent Analytics account at [agentanalytics.sh](https://agentanalytics.sh).
 
-[agentanalytics.sh](https://agentanalytics.sh)
+## What ships today
 
-## Install
+- `page`: company-level live map and evidence view
+- `dashboardWidget`: compact live status summary
+- `sidebar`: left-nav entry that opens the live page
+- `settingsPage`: browser-based login, connection status, and project selection
+- Worker-owned auth, `/live` polling, `/stream` fan-out, and company-scoped cache/state
+
+## Install from the CLI
 
 ```bash
 npx paperclipai plugin install @agent-analytics/paperclip-live-analytics-plugin
 ```
 
-After install, connect the plugin to your Agent Analytics account from the plugin settings page.
+After install, finish connection from the plugin settings page.
 
-## What ships in v1
-
-- `page`: company-level live operator view
-- `dashboardWidget`: compact live summary
-- `sidebar`: left-nav entry that opens the live page
-- `settingsPage`: login-first auth, explicit asset mapping, rollout controls
-- Worker-owned Agent Analytics auth, `/live` polling, `/stream` SSE fan-out, and company-scoped live cache
-
-## Package name
-
-`@agent-analytics/paperclip-live-analytics-plugin`
-
-## Local status
-
-This package is scaffolded inside the main Agent Analytics workspace so it can be implemented and reviewed in one place. It is structured to move into its own standalone repo without code changes.
-
-## Scripts
+## Local development
 
 ```bash
 cd paperclip-live-analytics-plugin
@@ -65,9 +58,10 @@ npm run build
 npm pack
 ```
 
-`npm test` only exercises the dependency-light worker/shared logic. `npm run build` expects the React/Vite dependencies in `package.json`.
+- `npm test` exercises the worker/shared logic.
+- `npm run build` produces the Paperclip worker, manifest, and UI bundle.
 
-## Publish checklist
+## Publish
 
 ```bash
 cd paperclip-live-analytics-plugin
@@ -79,15 +73,9 @@ npm publish --access public
 
 The package is configured for public scoped npm publishing.
 
-## Files
+## Repository layout
 
-- `paperclip-plugin.manifest.json`: Paperclip-facing manifest contract
-- `src/worker/`: worker setup, auth, live polling, SSE fan-out, state persistence
-- `src/ui/`: React surfaces for page, widget, and settings
-- `docs/`: operator and maintainer docs shipped with the plugin
-
-## Local standalone repo
-
-This directory is intended to become its own repository at:
-
-[https://github.com/Agent-Analytics/paperclip-live-analytics-plugin](https://github.com/Agent-Analytics/paperclip-live-analytics-plugin)
+- `src/worker/`: auth, live polling, stream fan-out, and company-scoped state
+- `src/ui/`: page, widget, and settings UI
+- `src/paperclip/`: Paperclip-specific manifest and entrypoints
+- `docs/`: operator and maintainer notes

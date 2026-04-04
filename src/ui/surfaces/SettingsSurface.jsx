@@ -183,7 +183,7 @@ export function SettingsSurface({
               <div className="aa-settings-login-card">
                 <p className="aa-settings-login-message">Connect your Agent Analytics account to start the live map in Paperclip.</p>
                 <button className="aa-button aa-button-primary aa-button-hero" onClick={handleStartLogin}>
-                  Login
+                  Connect Agent Analytics
                 </button>
               </div>
             </div>

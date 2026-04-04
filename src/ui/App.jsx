@@ -48,7 +48,7 @@ export function App() {
   if (surface === 'dashboardWidget') {
     return (
       <SurfaceFrame surface={surface}>
-        <WidgetSurface widget={liveWidget.data || liveWidget.data || { connection: { status: 'idle', label: 'Idle' }, metrics: {}, warnings: [] }} fullPageHref="?surface=page" />
+        <WidgetSurface widget={liveWidget.data || { connection: { status: 'idle', label: 'Idle' }, metrics: {}, warnings: [] }} fullPageHref="?surface=page" />
       </SurfaceFrame>
     );
   }
