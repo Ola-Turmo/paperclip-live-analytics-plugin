@@ -50,6 +50,7 @@ export function createEmptyCompanyLiveState() {
       status: 'idle',
       label: 'Not connected',
       detail: 'Connect Agent Analytics from settings to start the live feed.',
+      reason: 'not_connected',
     },
     metrics: {
       activeVisitors: 0,
@@ -70,6 +71,7 @@ export function createEmptyCompanyLiveState() {
       countries: [],
     },
     assets: [],
+    historicalSummary: null,
     snoozedAssets: [],
     warnings: [],
   };

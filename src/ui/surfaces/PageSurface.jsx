@@ -1,3 +1,4 @@
+import { BILLING_UPGRADE_URL } from '../../shared/constants.js';
 import { CountryMapPanel } from '../components/CountryMapPanel.jsx';
 import { BrandMark } from '../components/BrandMark.jsx';
 import { trackPluginCta, trackPluginFeature } from '../analytics.js';
@@ -24,6 +25,14 @@ function formatRelativeTime(timestamp) {
   if (seconds < 60) return `Updated ${seconds}s ago`;
   const minutes = Math.round(seconds / 60);
   return `Updated ${minutes}m ago`;
+}
+
+function formatShortDate(value) {
+  if (!value) return 'No activity yet';
+  return new Date(`${value}T00:00:00Z`).toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+  });
 }
 
 function CountryPulse({ liveState }) {
@@ -176,16 +185,85 @@ function EmptyProjectState({ accountLabel, setupHref }) {
   );
 }
 
+function HistoricalSummaryCard({ summary, showUpgrade, upgradeHref = BILLING_UPGRADE_URL }) {
+  if (!summary) return null;
+
+  return (
+    <section className="aa-panel aa-fallback-panel">
+      <div className="aa-panel-header">
+        <div>
+          <p className="aa-kicker">Recent Activity</p>
+        </div>
+      </div>
+
+      <div className="aa-fallback-grid">
+        <div className="aa-mini-panel">
+          <h3>Today</h3>
+          <div className="aa-mini-row">
+            <span>Events</span>
+            <strong>{summary.usageToday.events}</strong>
+          </div>
+          <div className="aa-mini-row">
+            <span>Reads</span>
+            <strong>{summary.usageToday.reads}</strong>
+          </div>
+        </div>
+        <div className="aa-mini-panel">
+          <h3>Last 7 days</h3>
+          <div className="aa-mini-row">
+            <span>Total events</span>
+            <strong>{summary.totals.events}</strong>
+          </div>
+          <div className="aa-mini-row">
+            <span>Last active</span>
+            <strong>{formatShortDate(summary.lastActiveDate)}</strong>
+          </div>
+        </div>
+      </div>
+
+      <div className="aa-sparkline" aria-label="Seven day activity">
+        {summary.sparkline.map((row) => {
+          const maxEvents = Math.max(...summary.sparkline.map((entry) => entry.events), 1);
+          const height = Math.max(10, Math.round((row.events / maxEvents) * 72));
+          return (
+            <div className="aa-sparkline-day" key={row.date}>
+              <div className="aa-sparkline-bar" style={{ height }} />
+              <span>{formatShortDate(row.date)}</span>
+            </div>
+          );
+        })}
+      </div>
+
+      {showUpgrade ? (
+        <div className="aa-fallback-callout">
+          <div>
+            <strong>Live events are a paid feature.</strong>
+            <p>Keep this 7-day summary for free accounts, then upgrade when you want live visitors and the event stream inside Paperclip.</p>
+          </div>
+          <a
+            className="aa-button aa-button-primary aa-button-upgrade"
+            href={upgradeHref}
+            target="_blank"
+            rel="noreferrer"
+            onClick={() => trackPluginCta('upgrade_for_live_fallback')}
+          >
+            Upgrade for live events
+          </a>
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
 export function PageSurface({ liveState, onSnooze, setupHref = '/instance/settings/plugins' }) {
   const primaryAsset = liveState.assets[0] || null;
   const accountLabel = liveState.account?.email || 'No connected account';
-  const needsProjectSelection =
-    liveState.connection.status === 'live' &&
-    liveState.assets.length === 0 &&
-    String(liveState.connection.detail || '').includes('Select one Agent Analytics project');
+  const needsProjectSelection = liveState.connection.reason === 'project_selection_required';
+  const isLiveActive = liveState.connection.reason === 'live_active';
+  const showHistoricalFallback = liveState.connection.reason === 'live_empty' || liveState.connection.reason === 'live_unavailable_free_tier';
   const projectName = needsProjectSelection
     ? 'No project selected'
-    : (primaryAsset?.agentAnalyticsProject || primaryAsset?.label || 'Agent Analytics');
+    : (liveState.historicalSummary?.projectLabel || primaryAsset?.agentAnalyticsProject || primaryAsset?.label || 'Agent Analytics');
 
   return (
     <div className="aa-page-shell">
@@ -195,7 +273,7 @@ export function PageSurface({ liveState, onSnooze, setupHref = '/instance/settin
           <div>
             <p className="aa-kicker">Agent Analytics</p>
             <h1>{projectName}</h1>
-            <p className="aa-live-header-copy">Live map</p>
+            <p className="aa-live-header-copy">{liveState.connection.detail}</p>
           </div>
         </div>
         <div className="aa-live-header-status">
@@ -215,6 +293,10 @@ export function PageSurface({ liveState, onSnooze, setupHref = '/instance/settin
               <dt>Agent Analytics account</dt>
               <dd>{accountLabel}</dd>
             </div>
+            <div className="aa-live-header-meta-row">
+              <dt>Billing tier</dt>
+              <dd>{liveState.tier || 'unknown'}</dd>
+            </div>
           </dl>
         </div>
       </header>
@@ -223,37 +305,48 @@ export function PageSurface({ liveState, onSnooze, setupHref = '/instance/settin
         <EmptyProjectState accountLabel={accountLabel} setupHref={setupHref} />
       ) : (
         <>
-      <section className="aa-metric-grid">
-        <div className="aa-metric-card">
-          <span>Active visitors</span>
-          <strong>{liveState.metrics.activeVisitors}</strong>
-        </div>
-        <div className="aa-metric-card">
-          <span>Active sessions</span>
-          <strong>{liveState.metrics.activeSessions}</strong>
-        </div>
-        <div className="aa-metric-card">
-          <span>Events / min</span>
-          <strong>{liveState.metrics.eventsPerMinute}</strong>
-        </div>
-        <div className="aa-metric-card">
-          <span>Visible assets</span>
-          <strong>{liveState.metrics.assetsVisible}</strong>
-        </div>
-      </section>
+          <section className="aa-metric-grid">
+            <div className="aa-metric-card">
+              <span>Active visitors</span>
+              <strong>{liveState.metrics.activeVisitors}</strong>
+            </div>
+            <div className="aa-metric-card">
+              <span>Active sessions</span>
+              <strong>{liveState.metrics.activeSessions}</strong>
+            </div>
+            <div className="aa-metric-card">
+              <span>Events / min</span>
+              <strong>{liveState.metrics.eventsPerMinute}</strong>
+            </div>
+            <div className="aa-metric-card">
+              <span>Visible assets</span>
+              <strong>{liveState.metrics.assetsVisible}</strong>
+            </div>
+          </section>
 
-      <div className="aa-main-grid">
-        <CountryPulse liveState={liveState} />
-        <EvidenceColumn liveState={liveState} />
-      </div>
+          {showHistoricalFallback ? (
+            <HistoricalSummaryCard
+              summary={liveState.historicalSummary}
+              showUpgrade={liveState.connection.reason === 'live_unavailable_free_tier'}
+            />
+          ) : null}
 
-      <section className="aa-assets-section">
-        <div className="aa-asset-grid">
-          {liveState.assets.map((asset) => (
-            <AssetCard key={asset.assetKey} asset={asset} onSnooze={onSnooze} />
-          ))}
-        </div>
-      </section>
+          {isLiveActive ? (
+            <>
+              <div className="aa-main-grid">
+                <CountryPulse liveState={liveState} />
+                <EvidenceColumn liveState={liveState} />
+              </div>
+
+              <section className="aa-assets-section">
+                <div className="aa-asset-grid">
+                  {liveState.assets.map((asset) => (
+                    <AssetCard key={asset.assetKey} asset={asset} onSnooze={onSnooze} />
+                  ))}
+                </div>
+              </section>
+            </>
+          ) : null}
         </>
       )}
     </div>

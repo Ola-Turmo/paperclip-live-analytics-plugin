@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { BILLING_UPGRADE_URL } from '../../shared/constants.js';
 import { BrandMark } from '../components/BrandMark.jsx';
 import { trackPluginCta, trackPluginFeature } from '../analytics.js';
 
@@ -140,6 +141,20 @@ export function SettingsSurface({
                 <span>Selected project</span>
                 <strong>{formState.selectedProjectName || 'None yet'}</strong>
               </div>
+              {settingsData.auth.tier && settingsData.auth.tier !== 'pro' ? (
+                <div className="aa-tier-callout">
+                  <p>Live events require paid access. Free accounts still get the last 7 days for the selected project.</p>
+                  <a
+                    className="aa-button aa-button-primary aa-button-upgrade"
+                    href={BILLING_UPGRADE_URL}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={() => trackPluginCta('open_billing_upgrade_settings')}
+                  >
+                    Upgrade for live events
+                  </a>
+                </div>
+              ) : null}
             </div>
             </div>
           </>

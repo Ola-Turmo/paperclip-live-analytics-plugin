@@ -21,6 +21,14 @@ function buildQuery(params) {
     .join('&');
 }
 
+function createApiError(data, response, fallbackMessage) {
+  const error = new Error(data.message || data.error || fallbackMessage || `HTTP ${response.status}`);
+  error.status = response.status;
+  error.code = data.error || null;
+  error.payload = data;
+  return error;
+}
+
 function parseSseEvent(rawEvent) {
   const event = {
     event: 'message',
@@ -94,7 +102,7 @@ export class AgentAnalyticsClient {
     }
 
     if (!response.ok) {
-      throw new Error(data.message || data.error || `HTTP ${response.status}`);
+      throw createApiError(data, response);
     }
 
     return data;
@@ -177,6 +185,15 @@ export class AgentAnalyticsClient {
     return this.request('GET', `/live?${query}`);
   }
 
+  async getProject(projectId) {
+    return this.request('GET', `/projects/${encodeURIComponent(projectId)}`);
+  }
+
+  async getProjectUsage(projectId, { days } = {}) {
+    const query = buildQuery({ days });
+    return this.request('GET', `/projects/${encodeURIComponent(projectId)}/usage${query ? `?${query}` : ''}`);
+  }
+
   async subscribeToStream({ project, filter, signal, onConnected, onTrack, onComment }) {
     const query = buildQuery({
       project,
@@ -191,7 +208,13 @@ export class AgentAnalyticsClient {
 
     if (!response.ok || !response.body) {
       const payload = await response.text().catch(() => '');
-      throw new Error(payload || `Stream failed with HTTP ${response.status}`);
+      let parsed = {};
+      try {
+        parsed = payload ? JSON.parse(payload) : {};
+      } catch {
+        parsed = payload ? { message: payload } : {};
+      }
+      throw createApiError(parsed, response, `Stream failed with HTTP ${response.status}`);
     }
 
     const reader = response.body.getReader();

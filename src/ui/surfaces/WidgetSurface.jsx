@@ -2,6 +2,8 @@ import { BrandMark } from '../components/BrandMark.jsx';
 import { trackPluginCta } from '../analytics.js';
 
 export function WidgetSurface({ widget, fullPageHref = '?surface=page' }) {
+  const summary = widget.historicalSummary;
+
   return (
     <section className="aa-widget">
       <div className="aa-widget-header">
@@ -30,6 +32,19 @@ export function WidgetSurface({ widget, fullPageHref = '?surface=page' }) {
           <strong>{widget.metrics.eventsPerMinute}</strong>
         </div>
       </div>
+
+      {summary ? (
+        <div className="aa-widget-summary">
+          <div className="aa-mini-row">
+            <span>7d events</span>
+            <strong>{summary.totals.events}</strong>
+          </div>
+          <div className="aa-mini-row">
+            <span>Last active</span>
+            <strong>{summary.lastActiveDate || 'none'}</strong>
+          </div>
+        </div>
+      ) : null}
 
       <div className="aa-widget-footer">
         <a

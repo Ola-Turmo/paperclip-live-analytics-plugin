@@ -3,10 +3,13 @@ import {
   DATA_KEYS,
   DEFAULT_BASE_URL,
   DEFAULT_SNOOZE_MINUTES,
+  HISTORICAL_SUMMARY_DAYS,
+  HISTORICAL_SUMMARY_REFRESH_MS,
   MAX_ENABLED_ASSET_STREAMS,
 } from '../shared/constants.js';
 import {
   buildCompanyLiveState,
+  buildHistoricalSummary,
   clampLiveWindowSeconds,
   clampPollIntervalSeconds,
   createEmptyAssetState,
@@ -39,6 +42,10 @@ function serializeAccount(account) {
 
 function isStreamLimitErrorMessage(message) {
   return /STREAM_LIMIT|maximum 10 concurrent streams/i.test(String(message || ''));
+}
+
+function isProRequiredError(error) {
+  return error?.code === 'PRO_REQUIRED' || (error?.status === 403 && /paid plans|upgrade/i.test(String(error?.message || '')));
 }
 
 function toPublicAuthState(auth) {
@@ -331,6 +338,8 @@ export class PaperclipLiveAnalyticsService {
       await this.syncRuntime(companyId, settings, auth, runtime);
     }
 
+    await this.syncHistoricalSummary(companyId, settings, auth, runtime, { forceSync });
+
     return this.composeLiveState(companyId, settings, auth, snoozes);
   }
 
@@ -338,12 +347,13 @@ export class PaperclipLiveAnalyticsService {
     const selectedMapping = this.getSelectedProjectMapping(settings);
     const mappings = selectedMapping ? [selectedMapping] : [];
     const validation = validateEnabledMappings(mappings);
-    if (!settings.pluginEnabled || !auth.accessToken || !selectedMapping || validation.errors.length > 0) {
+    if (!settings.pluginEnabled || !auth.accessToken || !selectedMapping || validation.errors.length > 0 || auth.tier !== 'pro') {
       if (validation.errors.length > 0) {
         auth.status = 'error';
         auth.lastError = validation.errors.join(' ');
         await saveAuthState(this.ctx, companyId, auth);
       }
+      runtime.assetStates.clear();
       await this.stopRuntime(companyId, { keepState: true });
       return;
     }
@@ -441,6 +451,8 @@ export class PaperclipLiveAnalyticsService {
         pollers: new Map(),
         streams: new Map(),
         assetStates: new Map(),
+        historicalSummary: null,
+        lastHistoricalSyncAt: 0,
         lastState: null,
       };
       this.runtimes.set(companyId, runtime);
@@ -495,6 +507,9 @@ export class PaperclipLiveAnalyticsService {
     const warnings = [];
     if (auth.accessToken && !settings.selectedProjectName) {
       warnings.push('Select one Agent Analytics project to start the live monitor.');
+    }
+    if (auth.accessToken && auth.tier && auth.tier !== 'pro') {
+      warnings.push('Live events are a paid feature. The plugin will show the last 7 days until you upgrade.');
     }
     return { warnings, errors: [] };
   }
@@ -629,7 +644,7 @@ export class PaperclipLiveAnalyticsService {
       lastUpdatedAt: Date.now(),
     });
 
-    if (!isStreamLimitErrorMessage(message)) {
+    if (!isStreamLimitErrorMessage(message) && !isProRequiredError(error)) {
       const auth = await loadAuthState(this.ctx, companyId);
       await saveAuthState(this.ctx, companyId, {
         ...auth,
@@ -659,6 +674,7 @@ export class PaperclipLiveAnalyticsService {
       settings,
       auth,
       assets: assetStates,
+      historicalSummary: runtime.historicalSummary,
       snoozes,
     });
     runtime.lastState = liveState;
@@ -673,6 +689,52 @@ export class PaperclipLiveAnalyticsService {
     }
     const client = this.createClient(companyId, settings, auth);
     return client.listProjects();
+  }
+
+  async syncHistoricalSummary(companyId, settings, auth, runtime, { forceSync = false } = {}) {
+    const now = Date.now();
+    const selectedProjectId = String(settings.selectedProjectId || '').trim();
+
+    if (!auth.accessToken || !selectedProjectId) {
+      runtime.historicalSummary = null;
+      runtime.lastHistoricalSyncAt = 0;
+      return;
+    }
+
+    if (!forceSync && runtime.historicalSummary && now - runtime.lastHistoricalSyncAt < HISTORICAL_SUMMARY_REFRESH_MS) {
+      return;
+    }
+
+    try {
+      const client = this.createClient(companyId, settings, auth);
+      const [project, usage] = await Promise.all([
+        client.getProject(selectedProjectId),
+        client.getProjectUsage(selectedProjectId, { days: HISTORICAL_SUMMARY_DAYS }),
+      ]);
+
+      runtime.historicalSummary = buildHistoricalSummary({
+        project,
+        usage: usage?.usage || [],
+        settings,
+      });
+      runtime.lastHistoricalSyncAt = now;
+    } catch (error) {
+      runtime.historicalSummary = runtime.historicalSummary || buildHistoricalSummary({
+        project: null,
+        usage: [],
+        settings,
+      });
+      runtime.lastHistoricalSyncAt = now;
+
+      if (!isProRequiredError(error)) {
+        const authState = await loadAuthState(this.ctx, companyId);
+        await saveAuthState(this.ctx, companyId, {
+          ...authState,
+          status: 'error',
+          lastError: error.message || String(error),
+        });
+      }
+    }
   }
 
   async stopRuntime(companyId, { keepState = false } = {}) {
@@ -691,6 +753,8 @@ export class PaperclipLiveAnalyticsService {
 
     if (!keepState) {
       runtime.assetStates.clear();
+      runtime.historicalSummary = null;
+      runtime.lastHistoricalSyncAt = 0;
       runtime.lastState = null;
       this.runtimes.delete(companyId);
     }

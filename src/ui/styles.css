@@ -243,6 +243,10 @@ select {
   padding: 22px;
 }
 
+.aa-fallback-panel {
+  margin-bottom: 18px;
+}
+
 .aa-panel-header,
 .aa-widget-header,
 .aa-asset-topline,
@@ -256,15 +260,75 @@ select {
 
 .aa-widget-footer {
   display: flex;
-  justify-content: flex-end;
+  justify-content: flex-start;
   gap: 14px;
   align-items: center;
+  margin-top: 14px;
+}
+
+.aa-widget-summary,
+.aa-tier-callout,
+.aa-fallback-callout {
+  margin-top: 16px;
+  padding: 16px 18px;
+  border-radius: 20px;
+  border: 1px solid var(--aa-panel-stroke-faint);
+  background: var(--aa-panel-soft);
+}
+
+.aa-tier-callout,
+.aa-fallback-callout {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.aa-tier-callout p,
+.aa-fallback-callout p {
+  margin: 6px 0 0;
+  color: var(--aa-muted);
+  line-height: 1.5;
 }
 
 .aa-world-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 12px;
+}
+
+.aa-fallback-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.aa-sparkline {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 10px;
+  align-items: end;
+  margin-top: 18px;
+}
+
+.aa-sparkline-day {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+}
+
+.aa-sparkline-day span {
+  color: var(--aa-muted);
+  font-size: 0.75rem;
+  text-align: center;
+}
+
+.aa-sparkline-bar {
+  width: 100%;
+  min-height: 10px;
+  border-radius: 999px 999px 12px 12px;
+  background: linear-gradient(180deg, var(--aa-accent) 0%, var(--aa-accent-warm) 100%);
 }
 
 .aa-map-panel {
@@ -614,9 +678,24 @@ select {
   color: #111;
 }
 
+.aa-widget-summary .aa-mini-row + .aa-mini-row {
+  margin-top: 10px;
+}
+
 .aa-button-hero {
   padding: 14px 22px;
   font-size: 1rem;
+}
+
+.aa-button-upgrade {
+  min-width: 168px;
+  padding: 12px 20px;
+  border-radius: 16px;
+  text-align: center;
+  line-height: 1.25;
+  white-space: normal;
+  text-wrap: balance;
+  flex: 0 0 auto;
 }
 
 .aa-button-danger {
@@ -656,6 +735,12 @@ select {
 .aa-widget {
   max-width: 520px;
   margin: 0 auto;
+}
+
+.aa-widget-footer .aa-button {
+  width: 100%;
+  justify-content: center;
+  text-align: center;
 }
 
 .aa-widget-brand {
