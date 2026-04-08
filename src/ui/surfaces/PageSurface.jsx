@@ -35,7 +35,7 @@ function formatShortDate(value) {
   });
 }
 
-function CountryPulse({ liveState }) {
+function CountryPulse({ liveState, overlay = null }) {
   return (
     <section className="aa-panel aa-world-panel">
       <div className="aa-panel-header">
@@ -48,6 +48,7 @@ function CountryPulse({ liveState }) {
           countries={liveState.world.countries}
           hotCountryCode={liveState.world.hotCountry}
           updatedAt={formatRelativeTime(liveState.generatedAt)}
+          overlay={overlay}
         />
       </div>
     </section>
@@ -189,7 +190,7 @@ function HistoricalSummaryCard({ summary, showUpgrade, upgradeHref = BILLING_UPG
   if (!summary) return null;
 
   return (
-    <section className="aa-panel aa-fallback-panel">
+    <section className="aa-panel aa-fallback-panel" style={{ marginTop: '16px' }}>
       <div className="aa-panel-header">
         <div>
           <p className="aa-kicker">Recent Activity</p>
@@ -221,17 +222,16 @@ function HistoricalSummaryCard({ summary, showUpgrade, upgradeHref = BILLING_UPG
         </div>
       </div>
 
-      <div className="aa-sparkline" aria-label="Seven day activity">
-        {summary.sparkline.map((row) => {
-          const maxEvents = Math.max(...summary.sparkline.map((entry) => entry.events), 1);
-          const height = Math.max(10, Math.round((row.events / maxEvents) * 72));
-          return (
-            <div className="aa-sparkline-day" key={row.date}>
-              <div className="aa-sparkline-bar" style={{ height }} />
-              <span>{formatShortDate(row.date)}</span>
-            </div>
-          );
-        })}
+      <div className="aa-daily-activity-section">
+        <p className="aa-kicker">Daily events</p>
+        <div className="aa-daily-activity" aria-label="Seven day daily event counts">
+        {summary.sparkline.map((row) => (
+          <div className="aa-daily-activity-row" key={row.date}>
+            <span>{formatShortDate(row.date)}</span>
+            <strong>{row.events}</strong>
+          </div>
+        ))}
+        </div>
       </div>
 
       {showUpgrade ? (
@@ -260,8 +260,24 @@ export function PageSurface({ liveState, onSnooze, setupHref = '/instance/settin
   const accountLabel = liveState.account?.email || 'No connected account';
   const needsProjectSelection = liveState.connection.reason === 'project_selection_required';
   const isLiveActive = liveState.connection.reason === 'live_active';
-  const showHistoricalFallback = liveState.connection.reason === 'live_empty' || liveState.connection.reason === 'live_unavailable_free_tier';
+  const isLiveEmpty = liveState.connection.reason === 'live_empty';
+  const isBlocked = liveState.connection.reason === 'live_unavailable_free_tier';
+  const showHistoricalSummary = Boolean(liveState.historicalSummary);
   const isDisconnected = liveState.connection.reason === 'not_connected' || liveState.connection.reason === 'connection_error';
+  const showMapSection = !isDisconnected && !needsProjectSelection;
+  const mapOverlay = isBlocked
+    ? {
+        title: 'Live map is blocked on the free tier.',
+        description: 'Upgrade to unlock live visitors and event activity in Paperclip. The map will start updating as soon as live access is enabled.',
+        blocked: true,
+      }
+    : isLiveEmpty
+      ? {
+          title: 'No country activity in the current live window yet.',
+          description: 'The map stays live and will zoom into the first active country when traffic appears.',
+          blocked: false,
+        }
+      : null;
   const projectName = isDisconnected
     ? 'Agent Analytics'
     : needsProjectSelection
@@ -327,28 +343,30 @@ export function PageSurface({ liveState, onSnooze, setupHref = '/instance/settin
             </div>
           </section>
 
-          {showHistoricalFallback ? (
+          {showMapSection ? (
+            <>
+              <div className="aa-main-grid">
+                <CountryPulse liveState={liveState} overlay={mapOverlay} />
+                {isLiveActive ? <EvidenceColumn liveState={liveState} /> : null}
+              </div>
+
+              {isLiveActive ? (
+                <section className="aa-assets-section">
+                  <div className="aa-asset-grid">
+                    {liveState.assets.map((asset) => (
+                      <AssetCard key={asset.assetKey} asset={asset} onSnooze={onSnooze} />
+                    ))}
+                  </div>
+                </section>
+              ) : null}
+            </>
+          ) : null}
+
+          {showHistoricalSummary ? (
             <HistoricalSummaryCard
               summary={liveState.historicalSummary}
               showUpgrade={liveState.connection.reason === 'live_unavailable_free_tier'}
             />
-          ) : null}
-
-          {isLiveActive ? (
-            <>
-              <div className="aa-main-grid">
-                <CountryPulse liveState={liveState} />
-                <EvidenceColumn liveState={liveState} />
-              </div>
-
-              <section className="aa-assets-section">
-                <div className="aa-asset-grid">
-                  {liveState.assets.map((asset) => (
-                    <AssetCard key={asset.assetKey} asset={asset} onSnooze={onSnooze} />
-                  ))}
-                </div>
-              </section>
-            </>
           ) : null}
         </>
       )}

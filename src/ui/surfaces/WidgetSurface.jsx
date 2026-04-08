@@ -1,6 +1,14 @@
 import { BrandMark } from '../components/BrandMark.jsx';
 import { trackPluginCta } from '../analytics.js';
 
+function formatShortDate(value) {
+  if (!value) return 'none';
+  return new Date(`${value}T00:00:00Z`).toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+  });
+}
+
 export function WidgetSurface({ widget, primaryHref = '?surface=page', primaryLabel = 'Open full live page' }) {
   const summary = widget.historicalSummary;
 
@@ -41,7 +49,7 @@ export function WidgetSurface({ widget, primaryHref = '?surface=page', primaryLa
           </div>
           <div className="aa-mini-row">
             <span>Last active</span>
-            <strong>{summary.lastActiveDate || 'none'}</strong>
+            <strong>{formatShortDate(summary.lastActiveDate)}</strong>
           </div>
         </div>
       ) : null}

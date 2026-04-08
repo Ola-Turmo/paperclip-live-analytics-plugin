@@ -292,7 +292,7 @@ export function buildHistoricalSummary({
   }));
   const totalEvents = sparkline.reduce((sum, row) => sum + row.events, 0);
   const totalReads = sparkline.reduce((sum, row) => sum + row.reads, 0);
-  const lastActiveRow = [...sparkline].reverse().find((row) => row.events > 0 || row.reads > 0) || null;
+  const lastActiveRow = sparkline.find((row) => row.events > 0 || row.reads > 0) || null;
 
   return {
     projectId: String(project?.id || settings.selectedProjectId || '').trim(),

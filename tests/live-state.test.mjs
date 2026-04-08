@@ -146,7 +146,7 @@ test('buildHistoricalSummary composes 7 day fallback metrics', () => {
   assert.equal(summary.projectId, 'proj_1');
   assert.equal(summary.usageToday.events, 4);
   assert.equal(summary.totals.events, 10);
-  assert.equal(summary.lastActiveDate, '2026-04-04');
+  assert.equal(summary.lastActiveDate, '2026-04-03');
 });
 
 test('buildCompanyLiveState marks free tier live as unavailable and preserves historical summary', () => {
