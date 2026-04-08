@@ -116,10 +116,12 @@ function WidgetInner({ context }) {
   if (loading && !content) return React.createElement('div', { className: 'aa-widget' }, 'Loading…');
   if (error && !content) return React.createElement('div', { className: 'aa-widget' }, `Widget failed: ${error.message}`);
   if (!content) return React.createElement('div', { className: 'aa-widget' }, 'No live summary yet.');
+  const needsSetup = content.connection?.reason === 'not_connected' || content.connection?.reason === 'connection_error';
 
   return React.createElement(WidgetSurface, {
     widget: content,
-    fullPageHref: buildPluginPageHref(context),
+    primaryHref: needsSetup ? buildPluginSettingsHref() : buildPluginPageHref(context),
+    primaryLabel: needsSetup ? 'Open plugin setup' : 'Open full live page',
   });
 }
 

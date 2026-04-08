@@ -261,7 +261,10 @@ export function PageSurface({ liveState, onSnooze, setupHref = '/instance/settin
   const needsProjectSelection = liveState.connection.reason === 'project_selection_required';
   const isLiveActive = liveState.connection.reason === 'live_active';
   const showHistoricalFallback = liveState.connection.reason === 'live_empty' || liveState.connection.reason === 'live_unavailable_free_tier';
-  const projectName = needsProjectSelection
+  const isDisconnected = liveState.connection.reason === 'not_connected' || liveState.connection.reason === 'connection_error';
+  const projectName = isDisconnected
+    ? 'Agent Analytics'
+    : needsProjectSelection
     ? 'No project selected'
     : (liveState.historicalSummary?.projectLabel || primaryAsset?.agentAnalyticsProject || primaryAsset?.label || 'Agent Analytics');
 

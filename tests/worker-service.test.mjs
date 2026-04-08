@@ -235,3 +235,36 @@ test('loadLivePage returns live_empty for pro tier with no current live activity
   assert.equal(liveState.historicalSummary.totals.events, 5);
   await service.shutdown();
 });
+
+test('disconnectAuth clears selected project state', async () => {
+  const { ctx } = createMockCtx();
+  await ctx.state.set(
+    { namespace: 'agent-analytics-live', scopeId: 'company_1', stateKey: 'config' },
+    {
+      ...createDefaultSettings(),
+      selectedProjectId: 'proj_1',
+      selectedProjectName: 'agentanalytics-sh',
+      selectedProjectLabel: 'agentanalytics-sh',
+      selectedProjectAllowedOrigins: ['*'],
+    }
+  );
+  await ctx.state.set(
+    { namespace: 'agent-analytics-live', scopeId: 'company_1', stateKey: 'auth' },
+    {
+      ...createDefaultAuthState(),
+      accessToken: 'access_1',
+      refreshToken: 'refresh_1',
+      status: 'connected',
+      accountSummary: { email: 'danny@example.com' },
+      tier: 'pro',
+    }
+  );
+
+  const service = new PaperclipLiveAnalyticsService(ctx);
+  const result = await service.disconnectAuth({ companyId: 'company_1' });
+  const settings = await ctx.state.get({ namespace: 'agent-analytics-live', scopeId: 'company_1', stateKey: 'config' });
+
+  assert.equal(result.auth.connected, false);
+  assert.equal(settings.selectedProjectId, '');
+  assert.equal(settings.selectedProjectName, '');
+});

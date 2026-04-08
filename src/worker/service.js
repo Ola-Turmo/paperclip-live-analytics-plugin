@@ -224,6 +224,7 @@ export class PaperclipLiveAnalyticsService {
   }
 
   async disconnectAuth({ companyId }) {
+    const settings = this.normalizeSettings(await loadSettings(this.ctx, companyId));
     const auth = await loadAuthState(this.ctx, companyId);
     const nextAuth = {
       ...auth,
@@ -237,6 +238,15 @@ export class PaperclipLiveAnalyticsService {
       pendingAuthRequest: null,
       lastError: null,
     };
+    const nextSettings = {
+      ...settings,
+      selectedProjectId: '',
+      selectedProjectName: '',
+      selectedProjectLabel: '',
+      selectedProjectAllowedOrigins: [],
+      monitoredAssets: [],
+    };
+    await saveSettings(this.ctx, companyId, nextSettings);
     await saveAuthState(this.ctx, companyId, nextAuth);
     await this.stopRuntime(companyId);
     return this.loadSettingsData({ companyId });

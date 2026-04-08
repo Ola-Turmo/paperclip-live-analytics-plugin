@@ -46,9 +46,15 @@ export function App() {
   });
 
   if (surface === 'dashboardWidget') {
+    const widget = liveWidget.data || { connection: { status: 'idle', label: 'Idle' }, metrics: {}, warnings: [] };
+    const needsSetup = widget.connection?.reason === 'not_connected' || widget.connection?.reason === 'connection_error';
     return (
       <SurfaceFrame surface={surface}>
-        <WidgetSurface widget={liveWidget.data || { connection: { status: 'idle', label: 'Idle' }, metrics: {}, warnings: [] }} fullPageHref="?surface=page" />
+        <WidgetSurface
+          widget={widget}
+          primaryHref={needsSetup ? '?surface=settingsPage' : '?surface=page'}
+          primaryLabel={needsSetup ? 'Open plugin setup' : 'Open full live page'}
+        />
       </SurfaceFrame>
     );
   }
