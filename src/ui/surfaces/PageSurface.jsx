@@ -238,7 +238,7 @@ function ProjectSelectionPanel({
                 <span>{normalizeOrigins(project.allowed_origins)}</span>
               </div>
               <button
-                className={`aa-button ${isSelected ? 'aa-button-secondary' : 'aa-button-light'}`}
+                className={`aa-button aa-project-select-button ${isSelected ? 'aa-button-secondary' : 'aa-button-light'}`}
                 onClick={async () => {
                   trackPluginFeature('project_selected', { project_name: project.name });
                   if (isSelected) {

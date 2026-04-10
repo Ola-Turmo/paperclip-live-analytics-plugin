@@ -154,10 +154,12 @@ select {
 }
 
 .aa-live-header-status {
-  min-width: 280px;
+  flex: 0 1 420px;
+  min-width: min(420px, 100%);
+  max-width: 100%;
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
+  align-items: stretch;
   gap: 12px;
   text-align: left;
 }
@@ -173,7 +175,7 @@ select {
 .aa-live-header-meta {
   display: grid;
   gap: 8px;
-  width: min(320px, 100%);
+  width: 100%;
   margin: 0;
 }
 
@@ -355,7 +357,8 @@ select {
 }
 
 .aa-header-project-switcher {
-  width: min(320px, 100%);
+  width: 100%;
+  max-width: 100%;
 }
 
 .aa-header-project-switcher-summary {
@@ -368,6 +371,18 @@ select {
 
 .aa-header-project-switcher-body {
   padding: 0 16px 16px;
+}
+
+.aa-project-switcher-body .aa-settings-row > div,
+.aa-header-project-switcher-body .aa-settings-row > div {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.aa-project-select-button {
+  align-self: flex-start;
+  min-width: 9.5rem;
+  white-space: nowrap;
 }
 
 .aa-tier-callout,
