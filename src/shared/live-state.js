@@ -360,7 +360,7 @@ export function buildCompanyLiveState({ settings, auth, assets, historicalSummar
   const configuredProjectCount = settings.selectedProjectName ? 1 : settings.monitoredAssets?.length || 0;
   const warnings = [];
   if (auth.status === 'connected' && !settings.selectedProjectName) {
-    warnings.push('Select one Agent Analytics project in settings to start the live monitor.');
+    warnings.push('Select one Agent Analytics project on the live page to start the live monitor.');
   }
   if (auth.status === 'connected' && auth.tier && auth.tier !== 'pro') {
     warnings.push('Live events are a paid feature. The plugin will show the last 7 days until the account upgrades.');
@@ -402,7 +402,7 @@ export function buildCompanyLiveState({ settings, auth, assets, historicalSummar
       liveState.connection = {
         status: 'live',
         label: 'Connected',
-        detail: 'Connected. Select one Agent Analytics project in settings to start the live feed.',
+        detail: 'Connected. Choose the Agent Analytics project for this company to load the live view.',
         reason: 'project_selection_required',
       };
     } else if (hasLiveActivity) {

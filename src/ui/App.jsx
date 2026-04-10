@@ -23,7 +23,7 @@ export function App() {
 
   const livePage = usePluginData(DATA_KEYS.livePageLoad, { companyId }, { enabled: surface === 'page' });
   const liveWidget = usePluginData(DATA_KEYS.liveWidgetLoad, { companyId }, { enabled: surface === 'dashboardWidget' });
-  const settings = usePluginData(DATA_KEYS.settingsLoad, { companyId }, { enabled: surface === 'settingsPage' });
+  const settings = usePluginData(DATA_KEYS.settingsLoad, { companyId }, { enabled: surface === 'settingsPage' || surface === 'page' });
 
   const authStart = usePluginAction(ACTION_KEYS.authStart);
   const authReconnect = usePluginAction(ACTION_KEYS.authReconnect);
@@ -54,12 +54,13 @@ export function App() {
   if (surface === 'dashboardWidget') {
     const widget = liveWidget.data || { connection: { status: 'idle', label: 'Idle' }, metrics: {}, warnings: [] };
     const needsSetup = widget.connection?.reason === 'not_connected' || widget.connection?.reason === 'connection_error';
+    const needsProjectSelection = widget.connection?.reason === 'project_selection_required';
     return (
       <SurfaceFrame surface={surface}>
         <WidgetSurface
           widget={widget}
           primaryHref={needsSetup ? '?surface=settingsPage' : '?surface=page'}
-          primaryLabel={needsSetup ? 'Open plugin setup' : 'Open full live page'}
+          primaryLabel={needsSetup ? 'Open plugin setup' : needsProjectSelection ? 'Choose project' : 'Open full live page'}
         />
       </SurfaceFrame>
     );
@@ -85,6 +86,8 @@ export function App() {
     <SurfaceFrame surface={surface}>
       <PageSurface
         liveState={streamState}
+        settingsData={settings.data}
+        onSelectProject={(nextSettings) => settingsSave.run({ companyId, settings: nextSettings })}
         onSnooze={(assetKey) => snoozeAsset.run({ companyId, assetKey })}
         onUnsnooze={(assetKey) => unsnoozeAsset.run({ companyId, assetKey })}
       />

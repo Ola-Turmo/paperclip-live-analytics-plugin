@@ -8,11 +8,6 @@ import {
 import { BrandMark } from '../components/BrandMark.jsx';
 import { trackPluginCta, trackPluginFeature } from '../analytics.js';
 
-function normalizeOrigins(value) {
-  if (Array.isArray(value)) return value.filter(Boolean).join(', ');
-  return value || '*';
-}
-
 function SetupSnippet({ label, value, copyLabel, onCopy }) {
   return (
     <div className="aa-settings-setup-snippet">
@@ -175,10 +170,6 @@ export function SettingsSurface({
                 <span>Billing tier</span>
                 <strong>{settingsData.auth.tier || 'unknown'}</strong>
               </div>
-              <div className="aa-mini-row">
-                <span>Selected project</span>
-                <strong>{formState.selectedProjectName || 'None yet'}</strong>
-              </div>
               {settingsData.auth.tier && settingsData.auth.tier !== 'pro' ? (
                 <div className="aa-tier-callout">
                   <p>Live events require paid access. Free accounts still get the last 7 days for the selected project.</p>
@@ -278,64 +269,6 @@ export function SettingsSurface({
           </>
         )}
       </section>
-
-      {isConnected ? (
-        <section className="aa-panel">
-          <div className="aa-panel-header">
-            <div>
-              <p className="aa-kicker">Project Selection</p>
-              <h2>Choose one Agent Analytics project for this Paperclip company.</h2>
-            </div>
-          </div>
-
-          <div className="aa-settings-stack">
-            {(settingsData.discoveredProjects || []).map((project) => {
-              const isSelected = formState.selectedProjectName === project.name;
-              return (
-                <div className="aa-settings-row" key={project.id || project.name}>
-                  <div>
-                    <strong>{project.name}</strong>
-                    <span>{normalizeOrigins(project.allowed_origins)}</span>
-                  </div>
-                  <button
-                    className={`aa-button ${isSelected ? 'aa-button-secondary' : 'aa-button-light'}`}
-                    onClick={async () => {
-                      trackPluginFeature('project_selected', { project_name: project.name });
-                      const nextState = {
-                        ...formState,
-                        selectedProjectId: project.id || '',
-                        selectedProjectName: project.name,
-                        selectedProjectLabel: project.name,
-                        selectedProjectAllowedOrigins: Array.isArray(project.allowed_origins)
-                          ? project.allowed_origins
-                          : project.allowed_origins && project.allowed_origins !== '*'
-                            ? String(project.allowed_origins).split(',').map((value) => value.trim()).filter(Boolean)
-                            : project.allowed_origins === '*'
-                              ? ['*']
-                              : [],
-                      };
-                      setFormState(nextState);
-                      await onSaveSettings(nextState);
-                    }}
-                  >
-                    {isSelected ? 'Selected' : 'Use this project'}
-                  </button>
-                </div>
-              );
-            })}
-            {!settingsData.discoveredProjects?.length ? (
-              <div className="aa-settings-stack">
-                <p className="aa-muted-note">No projects loaded yet.</p>
-                {settingsData.projectListError ? (
-                  <p className="aa-muted-note">Project load error: {settingsData.projectListError}</p>
-                ) : (
-                  <p className="aa-muted-note">If you connected before this fix, disconnect and connect again so the session includes `projects:read`.</p>
-                )}
-              </div>
-            ) : null}
-          </div>
-        </section>
-      ) : null}
 
       {isConnected ? (
         <section className="aa-panel">

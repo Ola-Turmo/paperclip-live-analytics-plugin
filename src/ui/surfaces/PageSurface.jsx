@@ -1,7 +1,22 @@
+import { useRef } from 'react';
 import { BILLING_UPGRADE_URL } from '../../shared/constants.js';
 import { CountryMapPanel } from '../components/CountryMapPanel.jsx';
 import { BrandMark } from '../components/BrandMark.jsx';
 import { trackPluginCta, trackPluginFeature } from '../analytics.js';
+
+function normalizeOrigins(value) {
+  if (Array.isArray(value)) return value.filter(Boolean).join(', ');
+  return value || '*';
+}
+
+function getProjectAllowedOrigins(project) {
+  if (Array.isArray(project?.allowed_origins)) return project.allowed_origins;
+  if (project?.allowed_origins === '*') return ['*'];
+  if (project?.allowed_origins) {
+    return String(project.allowed_origins).split(',').map((value) => value.trim()).filter(Boolean);
+  }
+  return [];
+}
 
 function CogIcon() {
   return (
@@ -164,24 +179,113 @@ function AssetCard({ asset, onSnooze }) {
   );
 }
 
-function EmptyProjectState({ accountLabel, setupHref }) {
+function EmptyProjectState({ accountLabel, setupHref, settingsData, onSelectProject }) {
   return (
     <section className="aa-panel aa-empty-state">
-      <p className="aa-kicker">Live feed not configured</p>
-      <h2>Select one Agent Analytics project to start the live map.</h2>
+      <p className="aa-kicker">Choose Project</p>
+      <h2>Choose the Agent Analytics project for this Paperclip company.</h2>
       <p className="aa-empty-copy">
-        This Paperclip company is connected as <strong>{accountLabel}</strong>, but it does not have a live project selected yet.
-        Open plugin setup, choose the project, and the live map will start populating.
+        This company is connected as <strong>{accountLabel}</strong>, but it does not have a mapped Agent Analytics project yet.
+        The live map, metrics, and recent activity will appear after you pick the correct project below.
       </p>
-      <div className="aa-empty-actions">
-        <a
-          className="aa-button aa-button-primary"
-          href={setupHref}
-          onClick={() => trackPluginCta('open_plugin_setup_empty_state')}
-        >
+      <div className="aa-empty-picker">
+        <ProjectSelectionPanel
+          settingsData={settingsData}
+          onSelectProject={onSelectProject}
+          required
+          embedded
+        />
+      </div>
+      <p className="aa-empty-note">
+        Need to reconnect or manage plugin settings?{' '}
+        <a href={setupHref} onClick={() => trackPluginCta('open_plugin_setup_empty_state')}>
           Open plugin setup
         </a>
+        .
+      </p>
+    </section>
+  );
+}
+
+function ProjectSelectionPanel({
+  settingsData,
+  onSelectProject,
+  required = false,
+  embedded = false,
+}) {
+  const selectedProjectName = settingsData?.settings?.selectedProjectName || '';
+  const discoveredProjects = settingsData?.discoveredProjects || [];
+
+  if (!settingsData) {
+    return (
+      <section className="aa-panel">
+        <div className="aa-settings-stack">
+          <p className="aa-muted-note">Loading available Agent Analytics projects…</p>
+        </div>
+      </section>
+    );
+  }
+
+  const content = (
+    <>
+      <div className="aa-settings-stack">
+        {discoveredProjects.map((project) => {
+          const isSelected = selectedProjectName === project.name;
+          return (
+            <div className="aa-settings-row" key={project.id || project.name}>
+              <div>
+                <strong>{project.name}</strong>
+                <span>{normalizeOrigins(project.allowed_origins)}</span>
+              </div>
+              <button
+                className={`aa-button ${isSelected ? 'aa-button-secondary' : 'aa-button-light'}`}
+                onClick={async () => {
+                  trackPluginFeature('project_selected', { project_name: project.name });
+                  if (isSelected) {
+                    await onSelectProject(null, { closeOnly: true });
+                    return;
+                  }
+                  await onSelectProject({
+                    selectedProjectId: project.id || '',
+                    selectedProjectName: project.name,
+                    selectedProjectLabel: project.name,
+                    selectedProjectAllowedOrigins: getProjectAllowedOrigins(project),
+                  });
+                }}
+              >
+                {isSelected ? 'Selected' : 'Use this project'}
+              </button>
+            </div>
+          );
+        })}
+
+        {!discoveredProjects.length ? (
+          <div className="aa-settings-stack">
+            <p className="aa-muted-note">No projects loaded yet.</p>
+            {settingsData.projectListError ? (
+              <p className="aa-muted-note">Project load error: {settingsData.projectListError}</p>
+            ) : (
+              <p className="aa-muted-note">If you connected before this fix, disconnect and connect again so the session includes `projects:read`.</p>
+            )}
+          </div>
+        ) : null}
       </div>
+    </>
+  );
+
+  if (embedded) {
+    return content;
+  }
+
+  return (
+    <section className="aa-panel">
+      <div className="aa-panel-header">
+        <div>
+          <p className="aa-kicker">Project Mapping</p>
+          <h2>{required ? 'Choose the Agent Analytics project for this Paperclip company.' : 'Change Agent Analytics project'}</h2>
+        </div>
+      </div>
+      {content}
     </section>
   );
 }
@@ -255,7 +359,13 @@ function HistoricalSummaryCard({ summary, showUpgrade, upgradeHref = BILLING_UPG
   );
 }
 
-export function PageSurface({ liveState, onSnooze, setupHref = '/instance/settings/plugins' }) {
+export function PageSurface({
+  liveState,
+  settingsData = null,
+  onSelectProject = async () => {},
+  onSnooze,
+  setupHref = '/instance/settings/plugins',
+}) {
   const primaryAsset = liveState.assets[0] || null;
   const accountLabel = liveState.account?.email || 'No connected account';
   const needsProjectSelection = liveState.connection.reason === 'project_selection_required';
@@ -265,6 +375,7 @@ export function PageSurface({ liveState, onSnooze, setupHref = '/instance/settin
   const showHistoricalSummary = Boolean(liveState.historicalSummary);
   const isDisconnected = liveState.connection.reason === 'not_connected' || liveState.connection.reason === 'connection_error';
   const showMapSection = !isDisconnected && !needsProjectSelection;
+  const projectSwitcherRef = useRef(null);
   const mapOverlay = isBlocked
     ? {
         title: 'Live map is blocked on the free tier.',
@@ -281,8 +392,21 @@ export function PageSurface({ liveState, onSnooze, setupHref = '/instance/settin
   const projectName = isDisconnected
     ? 'Agent Analytics'
     : needsProjectSelection
-    ? 'No project selected'
+    ? 'Agent Analytics'
     : (liveState.historicalSummary?.projectLabel || primaryAsset?.agentAnalyticsProject || primaryAsset?.label || 'Agent Analytics');
+  const closeProjectSwitcher = () => {
+    if (projectSwitcherRef.current) {
+      projectSwitcherRef.current.open = false;
+    }
+  };
+  const handleHeaderProjectSelection = async (settings, { closeOnly = false } = {}) => {
+    if (closeOnly) {
+      closeProjectSwitcher();
+      return;
+    }
+    await onSelectProject(settings);
+    closeProjectSwitcher();
+  };
 
   return (
     <div className="aa-page-shell">
@@ -317,11 +441,34 @@ export function PageSurface({ liveState, onSnooze, setupHref = '/instance/settin
               <dd>{liveState.tier || 'unknown'}</dd>
             </div>
           </dl>
+          {liveState.authStatus === 'connected' && !needsProjectSelection ? (
+            <details className="aa-header-project-switcher" ref={projectSwitcherRef}>
+              <summary className="aa-header-project-switcher-summary">
+                <div className="aa-header-project-switcher-copy">
+                  <span className="aa-kicker">Mapped Agent Analytics project</span>
+                  <strong>{projectName}</strong>
+                </div>
+                <span className="aa-header-project-switcher-action">Change</span>
+              </summary>
+              <div className="aa-header-project-switcher-body">
+                <ProjectSelectionPanel
+                  settingsData={settingsData}
+                  onSelectProject={handleHeaderProjectSelection}
+                  embedded
+                />
+              </div>
+            </details>
+          ) : null}
         </div>
       </header>
 
       {needsProjectSelection ? (
-        <EmptyProjectState accountLabel={accountLabel} setupHref={setupHref} />
+        <EmptyProjectState
+          accountLabel={accountLabel}
+          setupHref={setupHref}
+          settingsData={settingsData}
+          onSelectProject={onSelectProject}
+        />
       ) : (
         <>
           <section className="aa-metric-grid">

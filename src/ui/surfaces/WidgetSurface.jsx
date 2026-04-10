@@ -11,6 +11,11 @@ function formatShortDate(value) {
 
 export function WidgetSurface({ widget, primaryHref = '?surface=page', primaryLabel = 'Open full live page' }) {
   const summary = widget.historicalSummary;
+  const ctaEvent = primaryLabel === 'Open plugin setup'
+    ? 'open_plugin_setup_widget'
+    : primaryLabel === 'Choose project'
+      ? 'open_project_selection_widget'
+      : 'open_full_live_page_widget';
 
   return (
     <section className="aa-widget">
@@ -58,7 +63,7 @@ export function WidgetSurface({ widget, primaryHref = '?surface=page', primaryLa
         <a
           className="aa-button aa-button-secondary"
           href={primaryHref}
-          onClick={() => trackPluginCta(primaryLabel === 'Open plugin setup' ? 'open_plugin_setup_widget' : 'open_full_live_page_widget')}
+          onClick={() => trackPluginCta(ctaEvent)}
         >
           {primaryLabel}
         </a>

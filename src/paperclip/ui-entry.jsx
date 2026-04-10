@@ -88,9 +88,12 @@ function PageInner({ context }) {
   const companyId = useCompanyId(context);
   const toast = usePluginToast();
   const { data, loading, error, refresh } = usePluginData(DATA_KEYS.livePageLoad, { companyId });
+  const { data: settingsData, refresh: refreshSettings } = usePluginData(DATA_KEYS.settingsLoad, { companyId });
   const snoozeAsset = usePluginAction(ACTION_KEYS.assetSnooze);
   const unsnoozeAsset = usePluginAction(ACTION_KEYS.assetUnsnooze);
+  const settingsSave = usePluginAction(ACTION_KEYS.settingsSave);
   useAutoRefresh(refresh, 5000);
+  useAutoRefresh(refreshSettings, 5000);
 
   useEffect(() => {
     trackPluginImpression('live_page_viewed', {
@@ -106,6 +109,13 @@ function PageInner({ context }) {
 
   return React.createElement(PageSurface, {
     liveState: content,
+    settingsData,
+    onSelectProject: async (settings) => {
+      await settingsSave({ companyId, settings });
+      toast({ title: 'Project updated', tone: 'success' });
+      refreshSettings();
+      refresh();
+    },
     setupHref: buildPluginSettingsHref(),
     onSnooze: async (assetKey) => {
       await snoozeAsset({ companyId, assetKey });
@@ -136,11 +146,12 @@ function WidgetInner({ context }) {
   if (error && !content) return React.createElement('div', { className: 'aa-widget' }, `Widget failed: ${error.message}`);
   if (!content) return React.createElement('div', { className: 'aa-widget' }, 'No live summary yet.');
   const needsSetup = content.connection?.reason === 'not_connected' || content.connection?.reason === 'connection_error';
+  const needsProjectSelection = content.connection?.reason === 'project_selection_required';
 
   return React.createElement(WidgetSurface, {
     widget: content,
     primaryHref: needsSetup ? buildPluginSettingsHref() : buildPluginPageHref(context),
-    primaryLabel: needsSetup ? 'Open plugin setup' : 'Open full live page',
+    primaryLabel: needsSetup ? 'Open plugin setup' : needsProjectSelection ? 'Choose project' : 'Open full live page',
   });
 }
 

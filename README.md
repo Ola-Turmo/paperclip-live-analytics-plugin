@@ -4,9 +4,10 @@ Live Agent Analytics inside a Paperclip company workspace.
 
 The plugin adds a live page, dashboard widget, sidebar entry, and settings page so operators can see current traffic without leaving Paperclip.
 
-Setup guide:
+Docs:
 
-[Install and set up Agent Analytics for Paperclip](https://docs.agentanalytics.sh/guides/paperclip/)
+- [Set up Agent Analytics for your Paperclip company](https://docs.agentanalytics.sh/guides/paperclip/)
+- [Paperclip Live Plugin](https://docs.agentanalytics.sh/reference/paperclip-live-plugin/)
 
 ## Install in Paperclip
 
@@ -21,7 +22,7 @@ Setup guide:
 4. Open the plugin `Configure` page.
 5. If the account is not set up yet, use the Paperclip setup task shown in the plugin help panel or the docs guide first.
 6. Log in with your existing Agent Analytics account in the browser.
-7. Select one Agent Analytics project for the current Paperclip company.
+7. Open the company live page from the sidebar and choose the Agent Analytics project for that Paperclip company.
 
 ## Screenshot
 
@@ -41,8 +42,7 @@ First-time Agent Analytics setup for Paperclip should be driven by the Paperclip
 - `page`: company-level live map and evidence view
 - `dashboardWidget`: compact live status summary
 - `sidebar`: left-nav entry that opens the live page
-- `settingsPage`: browser-based login, connection status, and project selection
-- `settingsPage`: existing-account browser login, Paperclip setup help, and project selection
+- `settingsPage`: existing-account browser login, Paperclip setup help, and advanced plugin settings
 - Worker-owned auth, `/live` polling, `/stream` fan-out, and company-scoped cache/state
 
 ## Install from the CLI
@@ -51,7 +51,7 @@ First-time Agent Analytics setup for Paperclip should be driven by the Paperclip
 npx paperclipai plugin install @agent-analytics/paperclip-live-analytics-plugin
 ```
 
-After install, finish connection from the plugin settings page.
+After install, finish connection from the plugin settings page, then choose the company’s Agent Analytics project on the live page.
 
 ## Local development
 

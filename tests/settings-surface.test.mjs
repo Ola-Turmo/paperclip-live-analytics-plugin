@@ -14,6 +14,7 @@ test('settings surface wires the Paperclip setup help panel and copy buttons', a
   assert.match(source, /PAPERCLIP_SETUP_TASK_TITLE/);
   assert.match(source, /PAPERCLIP_SETUP_TASK_CONTENT/);
   assert.match(source, /PAPERCLIP_SETUP_HELP_URL/);
+  assert.doesNotMatch(source, /Choose one Agent Analytics project for this Paperclip company/);
   assert.equal(PAPERCLIP_SETUP_TASK_TITLE, 'Hire an analyst to use AgentAnalytics');
   assert.match(PAPERCLIP_SETUP_TASK_CONTENT, /If approval is needed, send me the approval link/);
   assert.equal(PAPERCLIP_SETUP_HELP_URL, 'https://docs.agentanalytics.sh/guides/paperclip/');

@@ -74,6 +74,16 @@ test('savePluginSettings stores the selected project in company state', async ()
   assert.deepEqual(settings.selectedProjectAllowedOrigins, ['*']);
 });
 
+test('company scoped actions reject missing companyId', async () => {
+  const { ctx } = createMockCtx();
+  const service = new PaperclipLiveAnalyticsService(ctx);
+
+  await assert.rejects(
+    service.loadSettingsData({}),
+    /companyId is required/i
+  );
+});
+
 test('completeAuth is idempotent after the session is already connected', async () => {
   const { ctx } = createMockCtx();
   await ctx.state.set({ namespace: 'agent-analytics-live', scopeId: 'company_1', stateKey: 'config' }, createDefaultSettings());
