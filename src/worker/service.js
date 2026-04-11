@@ -32,6 +32,25 @@ function delay(ms) {
 
 const DEFAULT_RUNTIME_IDLE_MS = 30_000;
 
+function randomHex(byteLength) {
+  const bytes = new Uint8Array(byteLength);
+  globalThis.crypto.getRandomValues(bytes);
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
+}
+
+async function sha256Hex(value) {
+  const buffer = await globalThis.crypto.subtle.digest('SHA-256', new TextEncoder().encode(String(value)));
+  return Array.from(new Uint8Array(buffer), (byte) => byte.toString(16).padStart(2, '0')).join('');
+}
+
+async function createPkcePair() {
+  const codeVerifier = randomHex(32);
+  return {
+    codeVerifier,
+    codeChallenge: await sha256Hex(codeVerifier),
+  };
+}
+
 function serializeAccount(account) {
   if (!account) return null;
   return {
@@ -51,6 +70,15 @@ function isProRequiredError(error) {
 }
 
 function toPublicAuthState(auth) {
+  const pendingAuthRequest = auth.pendingAuthRequest
+    ? {
+        authRequestId: auth.pendingAuthRequest.authRequestId,
+        authorizeUrl: auth.pendingAuthRequest.authorizeUrl,
+        approvalCode: auth.pendingAuthRequest.approvalCode,
+        pollToken: auth.pendingAuthRequest.pollToken,
+        expiresAt: auth.pendingAuthRequest.expiresAt,
+      }
+    : null;
   return {
     status: auth.status,
     mode: auth.mode,
@@ -58,7 +86,7 @@ function toPublicAuthState(auth) {
     accountSummary: auth.accountSummary,
     accessExpiresAt: auth.accessExpiresAt,
     refreshExpiresAt: auth.refreshExpiresAt,
-    pendingAuthRequest: auth.pendingAuthRequest,
+    pendingAuthRequest,
     lastValidatedAt: auth.lastValidatedAt,
     lastError: auth.lastError,
     connected: Boolean(auth.accessToken),
@@ -142,11 +170,13 @@ export class PaperclipLiveAnalyticsService {
     const settings = this.normalizeSettings(await loadSettings(this.ctx, scopeCompanyId));
     const auth = await loadAuthState(this.ctx, scopeCompanyId);
     const client = this.createClient(scopeCompanyId, settings, auth);
+    const pkce = callbackUrl ? await createPkcePair() : null;
     const started = await client.startPaperclipAuth({
       companyId: scopeCompanyId,
       label,
       mode: callbackUrl ? 'interactive' : 'detached',
       callbackUrl,
+      codeChallenge: pkce?.codeChallenge,
     });
 
     const nextAuth = {
@@ -165,6 +195,7 @@ export class PaperclipLiveAnalyticsService {
         approvalCode: started.approval_code,
         pollToken: started.poll_token,
         expiresAt: started.expires_at,
+        codeVerifier: pkce?.codeVerifier || null,
       },
     };
     await saveAuthState(this.ctx, scopeCompanyId, nextAuth);
@@ -180,6 +211,7 @@ export class PaperclipLiveAnalyticsService {
     }
 
     const requestId = authRequestId || auth.pendingAuthRequest?.authRequestId;
+    const codeVerifier = auth.pendingAuthRequest?.codeVerifier || null;
     if (!requestId || !exchangeCode) {
       throw new Error('authRequestId and exchangeCode are required');
     }
@@ -187,7 +219,7 @@ export class PaperclipLiveAnalyticsService {
     const client = this.createClient(scopeCompanyId, settings, auth);
     let exchanged;
     try {
-      exchanged = await client.exchangeAgentSession(requestId, exchangeCode);
+      exchanged = await client.exchangeAgentSession(requestId, exchangeCode, codeVerifier);
     } catch (error) {
       const latestAuth = await loadAuthState(this.ctx, scopeCompanyId);
       if (latestAuth.accessToken && !latestAuth.pendingAuthRequest) {
@@ -595,7 +627,7 @@ export class PaperclipLiveAnalyticsService {
         throw new Error('Approval completed without an exchange code.');
       }
 
-      const exchanged = await client.exchangeAgentSession(requestId, polled.exchange_code);
+      const exchanged = await client.exchangeAgentSession(requestId, polled.exchange_code, auth.pendingAuthRequest?.codeVerifier || null);
       const nextAuth = {
         mode: 'agent_session',
         accessToken: exchanged.agent_session.access_token,

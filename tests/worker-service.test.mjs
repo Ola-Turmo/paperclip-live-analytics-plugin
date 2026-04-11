@@ -122,6 +122,68 @@ test('completeAuth is idempotent after the session is already connected', async 
   assert.equal(fetchCalls, 1);
 });
 
+test('interactive start stores PKCE verifier privately and exchanges with it', async () => {
+  const { ctx } = createMockCtx();
+  await ctx.state.set({ namespace: 'agent-analytics-live', scopeId: 'company_1', stateKey: 'config' }, createDefaultSettings());
+  await ctx.state.set({ namespace: 'agent-analytics-live', scopeId: 'company_1', stateKey: 'auth' }, createDefaultAuthState());
+
+  const seenBodies = [];
+  const service = new PaperclipLiveAnalyticsService(ctx, {
+    fetchImpl: async (url, options = {}) => {
+      const path = new URL(String(url)).pathname;
+      const body = options.body ? JSON.parse(options.body) : {};
+      seenBodies.push({ path, body });
+      if (path === '/agent-sessions/start') {
+        return new Response(JSON.stringify({
+          ok: true,
+          auth_request_id: 'req_1',
+          authorize_url: 'https://api.agentanalytics.sh/agent-sessions/authorize/req_1',
+          approval_code: 'ABCD2345',
+          poll_token: 'aap_1',
+          expires_at: Date.now() + 600_000,
+        }), { status: 201, headers: { 'Content-Type': 'application/json' } });
+      }
+      if (path === '/agent-sessions/exchange') {
+        return new Response(JSON.stringify({
+          ok: true,
+          agent_session: {
+            access_token: 'aas_1',
+            refresh_token: 'aar_1',
+            access_expires_at: Date.now() + 60_000,
+            refresh_expires_at: Date.now() + 120_000,
+          },
+          account: { email: 'paperclip@example.com', tier: 'pro' },
+        }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      }
+      if (path === '/projects') {
+        return new Response(JSON.stringify({ projects: [] }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      }
+      throw new Error(`Unexpected URL ${url}`);
+    },
+  });
+
+  const started = await service.startAuth({
+    companyId: 'company_1',
+    callbackUrl: 'https://paperclip.example.com/agent-analytics-live?aa_auth_callback=1',
+  });
+
+  assert.equal(started.auth.pendingAuthRequest.codeVerifier, undefined);
+  assert.equal(typeof seenBodies[0].body.code_challenge, 'string');
+  assert.ok(seenBodies[0].body.code_challenge.length > 0);
+
+  const storedAuth = await ctx.state.get({ namespace: 'agent-analytics-live', scopeId: 'company_1', stateKey: 'auth' });
+  assert.equal(typeof storedAuth.pendingAuthRequest.codeVerifier, 'string');
+
+  await service.completeAuth({
+    companyId: 'company_1',
+    authRequestId: 'req_1',
+    exchangeCode: 'aae_1',
+  });
+
+  const exchangeBody = seenBodies.find((call) => call.path === '/agent-sessions/exchange').body;
+  assert.equal(exchangeBody.code_verifier, storedAuth.pendingAuthRequest.codeVerifier);
+});
+
 test('acknowledgeAuthError clears the pending auth request without wiping settings', async () => {
   const { ctx } = createMockCtx();
   await ctx.state.set({ namespace: 'agent-analytics-live', scopeId: 'company_1', stateKey: 'config' }, {

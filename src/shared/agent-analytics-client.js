@@ -109,7 +109,7 @@ export class AgentAnalyticsClient {
     return data;
   }
 
-  async startPaperclipAuth({ companyId, label, mode = 'detached', callbackUrl = null } = {}) {
+  async startPaperclipAuth({ companyId, label, mode = 'detached', callbackUrl = null, codeChallenge = null } = {}) {
     return this.request(
       'POST',
       '/agent-sessions/start',
@@ -121,6 +121,7 @@ export class AgentAnalyticsClient {
         callback_url: callbackUrl,
         label: label || `Paperclip Company ${companyId || ''}`.trim(),
         scopes: AGENT_SESSION_SCOPES,
+        ...(codeChallenge ? { code_challenge: codeChallenge } : {}),
         metadata: {
           platform: 'paperclip',
           plugin_id: PLUGIN_ID,
@@ -133,13 +134,14 @@ export class AgentAnalyticsClient {
     );
   }
 
-  async exchangeAgentSession(authRequestId, exchangeCode) {
+  async exchangeAgentSession(authRequestId, exchangeCode, codeVerifier = null) {
     return this.request(
       'POST',
       '/agent-sessions/exchange',
       {
         auth_request_id: authRequestId,
         exchange_code: exchangeCode,
+        ...(codeVerifier ? { code_verifier: codeVerifier } : {}),
       },
       { retryOnRefresh: false }
     );
