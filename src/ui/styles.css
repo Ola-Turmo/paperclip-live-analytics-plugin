@@ -882,6 +882,18 @@ select {
   margin: 0 auto;
 }
 
+.aa-widget-compact {
+  max-width: 420px;
+  gap: 0;
+}
+
+.aa-widget-compact-copy {
+  margin: 8px 0 0;
+  color: var(--aa-muted);
+  line-height: 1.55;
+  max-width: 42ch;
+}
+
 .aa-widget-footer .aa-button {
   width: 100%;
   justify-content: center;

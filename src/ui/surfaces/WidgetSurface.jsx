@@ -12,11 +12,42 @@ function formatShortDate(value) {
 export function WidgetSurface({ widget, primaryHref = '?surface=page', primaryLabel = 'Open full live page' }) {
   const summary = widget.historicalSummary;
   const statusLabel = widget.tier || widget.connection?.label || 'Not configured';
+  const isConnected = widget.connection?.status === 'connected' || widget.connection?.status === 'streaming';
   const ctaEvent = primaryLabel === 'Open plugin setup'
     ? 'open_plugin_setup_widget'
     : primaryLabel === 'Choose project'
       ? 'open_project_selection_widget'
       : 'open_full_live_page_widget';
+
+  if (!isConnected) {
+    return (
+      <section className="aa-widget aa-widget-compact">
+        <div className="aa-widget-header">
+          <div>
+            <div className="aa-widget-brand">
+              <BrandMark className="aa-widget-brandmark" alt="" />
+              <span className="aa-widget-brand-label">Agent Analytics</span>
+            </div>
+            <p className="aa-kicker">Needs setup</p>
+            <p className="aa-widget-compact-copy">
+              Connect a real Agent Analytics project to unlock live visitors, sessions, geography, and event flow.
+            </p>
+          </div>
+          <span className={`aa-status-pill aa-status-${widget.connection.status}`}>{statusLabel}</span>
+        </div>
+
+        <div className="aa-widget-footer">
+          <a
+            className="aa-button aa-button-secondary"
+            href={primaryHref}
+            onClick={() => trackPluginCta(ctaEvent)}
+          >
+            {primaryLabel}
+          </a>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="aa-widget">
