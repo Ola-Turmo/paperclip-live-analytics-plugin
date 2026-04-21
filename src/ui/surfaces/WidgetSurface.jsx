@@ -11,6 +11,7 @@ function formatShortDate(value) {
 
 export function WidgetSurface({ widget, primaryHref = '?surface=page', primaryLabel = 'Open full live page' }) {
   const summary = widget.historicalSummary;
+  const statusLabel = widget.tier || widget.connection?.label || 'Not configured';
   const ctaEvent = primaryLabel === 'Open plugin setup'
     ? 'open_plugin_setup_widget'
     : primaryLabel === 'Choose project'
@@ -28,7 +29,7 @@ export function WidgetSurface({ widget, primaryHref = '?surface=page', primaryLa
           <p className="aa-kicker">Live Status</p>
           <h2>{widget.connection.label}</h2>
         </div>
-        <span className={`aa-status-pill aa-status-${widget.connection.status}`}>{widget.tier || 'tier unknown'}</span>
+        <span className={`aa-status-pill aa-status-${widget.connection.status}`}>{statusLabel}</span>
       </div>
 
       <div className="aa-widget-metrics">

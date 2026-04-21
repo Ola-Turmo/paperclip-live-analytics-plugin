@@ -1,16 +1,34 @@
 import { useEffect, useState } from 'react';
 import { ACTION_KEYS, DATA_KEYS } from '../shared/constants.js';
 import { deriveWidgetSummary } from '../shared/live-state.js';
-import { demoLiveState, demoSettingsData } from './demo-data.js';
+import {
+  createDefaultAuthState,
+  createDefaultSettings,
+  createEmptyCompanyLiveState,
+} from '../shared/defaults.js';
 
 function getBridge() {
   return globalThis.__PAPERCLIP_PLUGIN_BRIDGE__ || null;
 }
 
+function createFallbackSettingsData() {
+  return {
+    settings: createDefaultSettings(),
+    auth: createDefaultAuthState(),
+    discoveredProjects: [],
+    validation: {
+      warnings: ['Paperclip bridge unavailable. Connect this plugin from a live Paperclip surface.'],
+      errors: [],
+    },
+    projectListError: 'Paperclip bridge unavailable',
+  };
+}
+
 function getFallbackData(key) {
-  if (key === DATA_KEYS.livePageLoad) return demoLiveState;
-  if (key === DATA_KEYS.liveWidgetLoad) return deriveWidgetSummary(demoLiveState);
-  if (key === DATA_KEYS.settingsLoad) return demoSettingsData;
+  const emptyLiveState = createEmptyCompanyLiveState();
+  if (key === DATA_KEYS.livePageLoad) return emptyLiveState;
+  if (key === DATA_KEYS.liveWidgetLoad) return deriveWidgetSummary(emptyLiveState);
+  if (key === DATA_KEYS.settingsLoad) return createFallbackSettingsData();
   return null;
 }
 
@@ -22,7 +40,7 @@ export function useHostContext() {
 
   const params = new URLSearchParams(globalThis.location?.search || '');
   return {
-    companyId: params.get('companyId') || 'demo-company',
+    companyId: params.get('companyId') || null,
     surface: params.get('surface') || 'page',
     basePath: '',
   };
@@ -70,34 +88,7 @@ export function usePluginAction(key) {
       if (bridge?.runAction) {
         return await bridge.runAction(key, payload);
       }
-
-      if (key === ACTION_KEYS.authStart) {
-        return {
-          auth: {
-            ...demoSettingsData.auth,
-            status: 'pending',
-            pendingAuthRequest: {
-              authRequestId: 'req_demo',
-              authorizeUrl: 'https://api.agentanalytics.sh/agent-sessions/authorize/req_demo',
-              approvalCode: 'ABCD2345',
-              pollToken: 'aap_demo',
-              expiresAt: Date.now() + 600_000,
-            },
-          },
-        };
-      }
-
-      if (key === ACTION_KEYS.settingsSave) {
-        return demoSettingsData;
-      }
-
-      if (key === ACTION_KEYS.assetSnooze || key === ACTION_KEYS.assetUnsnooze) {
-        return {
-          liveState: demoLiveState,
-        };
-      }
-
-      return { ok: true };
+      throw new Error(`Paperclip bridge unavailable for action '${key}'. Open this plugin inside a live Paperclip instance.`);
     } catch (actionError) {
       setError(actionError);
       throw actionError;
@@ -116,11 +107,6 @@ export function usePluginStream(channel, { companyId, onEvent }) {
     if (bridge?.subscribeStream) {
       return bridge.subscribeStream(channel, { companyId }, onEvent);
     }
-
-    const intervalId = setInterval(() => {
-      onEvent?.(demoLiveState);
-    }, 15_000);
-
-    return () => clearInterval(intervalId);
+    return undefined;
   }, [bridge, channel, companyId, onEvent]);
 }

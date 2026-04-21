@@ -1,8 +1,8 @@
 import { startTransition, useEffect, useState } from 'react';
 import { ACTION_KEYS, DATA_KEYS, LIVE_STREAM_CHANNEL } from '../shared/constants.js';
 import { PAPERCLIP_SETUP_TASK_CONTENT, PAPERCLIP_SETUP_TASK_TITLE } from '../shared/paperclip-setup.js';
+import { createEmptyCompanyLiveState } from '../shared/defaults.js';
 import { copyTextWithToast } from './copy-text.js';
-import { demoLiveState } from './demo-data.js';
 import { useHostContext, usePluginAction, usePluginData, usePluginStream } from './paperclip-bridge.js';
 import { PageSurface } from './surfaces/PageSurface.jsx';
 import { SettingsSurface } from './surfaces/SettingsSurface.jsx';
@@ -32,7 +32,7 @@ export function App() {
   const snoozeAsset = usePluginAction(ACTION_KEYS.assetSnooze);
   const unsnoozeAsset = usePluginAction(ACTION_KEYS.assetUnsnooze);
 
-  const [streamState, setStreamState] = useState(demoLiveState);
+  const [streamState, setStreamState] = useState(() => createEmptyCompanyLiveState());
 
   function copySetupText(text, successTitle) {
     void copyTextWithToast({ text, successTitle, toast: null }).catch(() => {});
