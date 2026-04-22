@@ -33,12 +33,6 @@ const manifest = {
         routePath: PLUGIN_PAGE_ROUTE,
       },
       {
-        type: 'dashboardWidget',
-        id: 'agent-analytics-live-widget',
-        displayName: 'Agent Analytics Live',
-        exportName: 'LiveDashboardWidget',
-      },
-      {
         type: 'sidebar',
         id: 'agent-analytics-live-sidebar',
         displayName: 'Analytics',

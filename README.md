@@ -2,7 +2,8 @@
 
 Live Agent Analytics inside a Paperclip company workspace.
 
-The plugin adds a live page, dashboard widget, sidebar entry, and settings page so operators can see current traffic without leaving Paperclip.
+The plugin adds a live page, sidebar entry, and settings page so operators can see current traffic without leaving Paperclip.
+The dashboard widget is intentionally omitted until a real Agent Analytics project is connected, which keeps paused or unconfigured companies free of dead dashboard surfaces.
 
 The important setup rule is that this is a multi-company plugin: each Paperclip company keeps its own plugin configuration and chooses its own Agent Analytics project.
 
@@ -45,7 +46,6 @@ First-time Agent Analytics setup for Paperclip should be driven by the Paperclip
 ## What ships today
 
 - `page`: company-level live map and evidence view
-- `dashboardWidget`: compact live status summary
 - `sidebar`: left-nav entry that opens the live page
 - `settingsPage`: existing-account browser login, per-company project selection, Paperclip setup help, and advanced plugin settings
 - Worker-owned auth, `/live` polling, `/stream` fan-out, and company-scoped cache/state
